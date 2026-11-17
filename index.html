@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Masterock HR</title>
+<meta name="theme-color" content="#0f1f3d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Masterock HR">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+/* Phone-first: navy header, scrolling content, bottom tab bar (Lookup / Team / Alerts). Same navy + gold as the desktop app. */
+:root {
+  --navy: #0f1f3d; --navy2: #1b2f57; --gold: #d4a82a; --bg: #eef1f6; --card: #ffffff; --ink: #172338; --muted: #6b7890;
+  --line: #d9dfe9; --red: #c0392b; --amber: #c27c0e; --green: #1e7b3a;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink);
+  -webkit-tap-highlight-color: transparent; }
+header { position: sticky; top: 0; z-index: 5; background: var(--navy); color: #fff; padding: calc(10px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+  display: flex; align-items: center; gap: 10px; border-bottom: 3px solid var(--gold); }
+header .badge { width: 34px; height: 34px; border-radius: 50%; background: var(--gold); color: var(--navy); font-weight: 800; display: grid; place-items: center; flex: none; }
+header h1 { margin: 0; font-size: 18px; letter-spacing: .5px; flex: 1; min-width: 0; }
+header small { display: block; font-size: 12px; color: #c4cfe3; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+header button { background: transparent; color: #c4cfe3; border: 1px solid #3a4f7a; border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; }
+main { padding: 14px max(16px, env(safe-area-inset-right)) calc(90px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); max-width: 720px; margin: 0 auto; }
+nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 5; background: #fff; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(3, 1fr);
+  padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+nav button { background: none; border: 0; padding: 9px 0 10px; font: 600 12px/1.2 inherit; color: var(--muted); display: grid; gap: 2px; justify-items: center; }
+nav button span { font-size: 21px; }
+nav button.on { color: var(--navy); } nav button.on span { filter: none; }
+nav button .dot { background: var(--red); color: #fff; border-radius: 10px; font-size: 11px; padding: 0 6px; margin-left: 2px; }
+.search { display: flex; gap: 8px; margin-bottom: 12px; }
+input, select { font: inherit; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); width: 100%; min-width: 0; }
+input:focus, select:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+.btn { font: 600 15px inherit; background: var(--navy); color: #fff; border: 0; border-radius: 10px; padding: 12px 16px; white-space: nowrap; }
+.btn.gold { background: var(--gold); color: var(--navy); } .btn.ghost { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+.btn:disabled { opacity: .5; }
+.list { display: grid; gap: 8px; }
+.row { background: var(--card); border-radius: 12px; padding: 10px 12px; display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; border: 1px solid var(--line); width: 100%; text-align: left; font: inherit; color: inherit; }
+.row img, .row .ph { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; background: #dfe5ef; display: grid; place-items: center; color: var(--muted); font-weight: 700; }
+.row b { display: block; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .row small { color: var(--muted); font-size: 13px; }
+.row > div { min-width: 0; }
+.pill { font-size: 12px; font-weight: 700; border-radius: 20px; padding: 3px 9px; white-space: nowrap; }
+.pill.ok { background: #e2f3e7; color: var(--green); } .pill.no { background: #f1e3e1; color: var(--red); } .pill.warn { background: #fbefd9; color: var(--amber); }
+.card { background: var(--card); border-radius: 14px; border: 1px solid var(--line); padding: 14px; margin-bottom: 12px; }
+.card h2 { margin: 0 0 10px; font-size: 13px; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); }
+.profile { display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: center; }
+.profile img, .profile .ph { width: 96px; height: 120px; border-radius: 10px; object-fit: cover; background: #dfe5ef; display: grid; place-items: center; color: var(--muted); font-size: 13px; }
+.profile h3 { margin: 0; font-size: 19px; line-height: 1.2; } .profile p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+dl { margin: 0; display: grid; grid-template-columns: minmax(110px, 40%) 1fr; gap: 8px 12px; font-size: 14px; }
+dt { color: var(--muted); } dd { margin: 0; font-weight: 600; word-break: break-word; }
+.back { background: none; border: 0; color: var(--navy); font: 600 15px inherit; padding: 0 0 10px; }
+.stat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.stat div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; }
+.stat b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; } .stat small { color: var(--muted); font-size: 12px; }
+.edit-row { display: grid; gap: 4px; margin-bottom: 10px; } .edit-row label { font-size: 13px; color: var(--muted); }
+.edit-row input.changed { background: #fff4d6; border-color: var(--gold); }
+.bar { position: sticky; bottom: calc(70px + env(safe-area-inset-bottom)); display: flex; gap: 8px; background: var(--bg); padding: 10px 0; }
+.bar .btn { flex: 1; }
+.empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+.welcome { min-height: 70vh; display: grid; place-items: center; text-align: center; }
+.welcome .badge { width: 84px; height: 84px; border-radius: 50%; background: var(--navy); color: var(--gold); font-size: 32px; font-weight: 800; display: grid; place-items: center; margin: 0 auto 14px; border: 4px solid var(--gold); }
+.welcome h2 { margin: 0 0 6px; } .welcome p { color: var(--muted); max-width: 320px; margin: 0 auto 18px; }
+.toast { position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--navy); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 9; max-width: 90vw; }
+.spin { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--navy); border-radius: 50%; animation: s 1s linear infinite; margin: 30px auto; }
+@keyframes s { to { transform: rotate(360deg); } }
+.confirm { position: fixed; inset: 0; background: rgba(15,31,61,.55); z-index: 10; display: grid; place-items: end center; }
+.confirm .sheet { background: #fff; width: 100%; max-width: 720px; border-radius: 16px 16px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); max-height: 80vh; overflow: auto; }
+.confirm ul { padding-left: 18px; font-size: 14px; } .confirm li { margin-bottom: 6px; word-break: break-word; }
+</style>
+</head>
+<body>
+<header><div class="badge">HR</div><h1>Masterock HR<small id="who">Human Resources</small></h1><button id="out" hidden>Sign out</button></header>
+<main id="main"></main>
+<nav id="nav" hidden>
+  <button data-tab="lookup" class="on"><span>🔍</span>Lookup</button>
+  <button data-tab="team"><span>👥</span>Team</button>
+  <button data-tab="alerts"><span>🔔</span>Alerts<b class="dot" id="alertCount" hidden></b></button>
+</nav>
+<script>
+/* ===== settings (same Google Sheet and photo folder as the desktop app) ===== */
+const CLIENT_ID = '747046879263-64eg8pft9q16doupmm7nikf31a4p0c2b.apps.googleusercontent.com';   // public web client ID (not a secret)
+const SHEET_ID = '1xpf_Sp1Uce9kpWTfVF9UBoRt6xNC89cUIkSdJaJbCb4';
+const PHOTOS_FOLDER = '1HQdtrapvKMQsRLoEdPtQYBylOeM-ekT0';
+const TAB = 'Employee Database';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.email';
+const SALARY = ['BASIC SALARY (USD)', 'FIXED ALLOWANCE (USD)', 'TRAVEL ALLOWANCE (USD)', 'MEAL ALLOWANCE (USD)', 'TRANSPORTATION ALLOWANCE (USD)', 'HOUSING ALLOWANCE (USD)'];
+const LOCKED = ['SL EMP ID', 'NO', 'PHOTO', 'LAST AUTO-UPDATE', 'AUTO-UPDATE SOURCE'];
+const QUICK = ['LOCAL CONTACT NUMBER', 'PERSONAL EMAIL', 'RESIDENCE ADDRESS IN SRI LANKA', 'CIVIL STATUS', 'EMERGENCY CONTACT NAME', 'EMERGENCY CONTACT NUMBER',
+  'PASSPORT NUMBER', 'DATE OF EXPIRY (MM/DD/YYYY)', 'VISA STATUS', 'RESIDENCE VISA NUMBER', 'MOST RECENT EXPIRY DATE', 'ACTIVE/ INACTIVE', 'DEPARTMENT (INTERNAL)', 'POSITION (PC /MR DESIGNATION)'];
+const SHOW = [['Full name (passport)', 'NAME AS IN PASSPORT'], ['Employee ID', 'SL EMP ID'], ['Company', 'COMPANY'], ['Expat / Local', 'EXPAT / LOCAL'], ['Status', 'ACTIVE/ INACTIVE'],
+  ['Nationality', 'NATIONALITY'], ['Position', 'POSITION (PC /MR DESIGNATION)'], ['Department', 'DEPARTMENT (INTERNAL)'], ['Join date', 'MROCK /REAL JOIN DATE (MM/DD/YY)'],
+  ['Mobile', 'LOCAL CONTACT NUMBER'], ['Email', 'PERSONAL EMAIL'], ['Address (SL)', 'RESIDENCE ADDRESS IN SRI LANKA'], ['Passport no', 'PASSPORT NUMBER'],
+  ['Passport expiry', 'DATE OF EXPIRY (MM/DD/YYYY)'], ['Visa status', 'VISA STATUS'], ['Residence visa no', 'RESIDENCE VISA NUMBER'], ['Visa expiry', 'MOST RECENT EXPIRY DATE'],
+  ['Emergency contact', 'EMERGENCY CONTACT NAME'], ['Emergency number', 'EMERGENCY CONTACT NUMBER'], ['EPF member no', 'EPF MEMBER NO']];
+
+/* ===== state ===== */
+let token = null, tokenClient = null, hdr = [], rows = [], tab = 'lookup', photoIndex = null, photoCache = {}, email = '';
+const $ = s => document.querySelector(s), main = $('#main');
+const norm = s => String(s ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const val = (r, k) => (r[k] ?? '').toString().trim();
+function toast(t) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); }
+function parseDate(s) { const m = String(s || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if (!m) return null; const d = new Date(+m[3], +m[2] - 1, +m[1]); return isNaN(d) ? null : d; }   // sheet dates are dd/mm/yyyy
+const daysTo = d => Math.round((d - new Date(new Date().toDateString())) / 864e5);
+
+/* ===== Google sign-in + API ===== */
+function initAuth() {
+  if (!window.google || !google.accounts) return setTimeout(initAuth, 200);
+  tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: async r => {
+    if (r.error) { welcome('Sign-in was cancelled. Try again.'); return; }
+    token = r.access_token; try { sessionStorage.setItem('hrTok', JSON.stringify({ t: token, exp: Date.now() + (r.expires_in - 60) * 1000 })); } catch (e) {}
+    await afterSignIn(); } });
+  let saved = null; try { saved = JSON.parse(sessionStorage.getItem('hrTok') || 'null'); } catch (e) {}
+  if (saved && saved.exp > Date.now()) { token = saved.t; afterSignIn(); } else welcome();
+}
+function welcome(msg) {
+  $('#nav').hidden = true; $('#out').hidden = true;
+  main.innerHTML = `<div class="welcome"><div><div class="badge">HR</div><h2>Masterock HR</h2><p>${msg ? esc(msg) : 'Sign in with the Google account your HR Sheet is shared with.'}</p>
+    <button class="btn gold" id="signin">Sign in with Google</button></div></div>`;
+  $('#signin').onclick = () => tokenClient.requestAccessToken({ prompt: '' });
+}
+async function api(url, opts = {}) {
+  const r = await fetch(url, { ...opts, headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+  if (r.status === 401) { token = null; try { sessionStorage.removeItem('hrTok'); } catch (e) {} welcome('Your session ended. Please sign in again.'); throw new Error('signed out'); }
+  if (r.status === 403) throw new Error('No access. Ask Kevin to share the Masterock HR Database with your Google account.');
+  if (!r.ok) throw new Error('Google returned ' + r.status);
+  return r;
+}
+async function afterSignIn() {
+  main.innerHTML = '<div class="spin"></div>';
+  try {
+    try { const u = await (await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + token } })).json(); email = u.email || ''; } catch (e) {}
+    $('#who').textContent = email || 'Human Resources';
+    await loadData(); $('#nav').hidden = false; $('#out').hidden = false; show(tab);
+  } catch (e) { if (e.message !== 'signed out') main.innerHTML = `<div class="empty">${esc(e.message)}<br><br><button class="btn" onclick="location.reload()">Try again</button></div>`; }
+}
+async function loadData() {
+  const r = await (await api(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent("'" + TAB + "'")}?majorDimension=ROWS`)).json();
+  const v = r.values || []; hdr = (v[0] || []).map(norm);
+  rows = v.slice(1).map((r, i) => { const o = { _row: i + 2 }; hdr.forEach((h, j) => { if (h && !SALARY.includes(h)) o[h] = r[j] ?? ''; }); return o; }).filter(o => val(o, 'SL EMP ID'));
+  const n = alerts().reduce((a, g) => a + g.items.length, 0); $('#alertCount').hidden = !n; $('#alertCount').textContent = n;
+}
+$('#out').onclick = () => { try { google.accounts.oauth2.revoke(token, () => {}); sessionStorage.removeItem('hrTok'); } catch (e) {} token = null; photoCache = {}; photoIndex = null; welcome(); };
+
+/* ===== photos from the shared Drive folder ===== */
+async function photoUrl(id) {
+  if (photoCache[id] !== undefined) return photoCache[id];
+  try {
+    if (!photoIndex) { photoIndex = {}; let pt = '';
+      do { const r = await (await api(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`'${PHOTOS_FOLDER}' in parents and trashed=false`)}&fields=nextPageToken,files(id,name)&pageSize=1000${pt ? '&pageToken=' + pt : ''}`)).json();
+        (r.files || []).forEach(f => photoIndex[f.name.replace(/\.[^.]+$/, '').toUpperCase()] = f.id); pt = r.nextPageToken || ''; } while (pt); }
+    const fid = photoIndex[norm(id)]; if (!fid) return photoCache[id] = '';
+    const b = await (await api(`https://www.googleapis.com/drive/v3/files/${fid}?alt=media`)).blob(); return photoCache[id] = URL.createObjectURL(b);
+  } catch (e) { return photoCache[id] = ''; }
+}
+function lazyPhotos() { document.querySelectorAll('[data-photo]').forEach(async el => { const u = await photoUrl(el.dataset.photo); if (u) { const img = document.createElement('img'); img.src = u; img.alt = ''; img.className = el.className; el.replaceWith(img); } }); }
+
+/* ===== screens ===== */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
+function show(t) { tab = t; document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === t)); ({ lookup, team, alerts: alertsView })[t](); scrollTo(0, 0); }
+const initials = r => val(r, 'FULL NAME').split(/[ ,]+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('');
+function statusPill(r) { const a = norm(val(r, 'ACTIVE/ INACTIVE')); return `<span class="pill ${a === 'ACTIVE' ? 'ok' : 'no'}">${a === 'ACTIVE' ? 'Active' : 'Inactive'}</span>`; }
+function rowHtml(r, right) { return `<button class="row" data-id="${esc(val(r, 'SL EMP ID'))}"><span class="ph" data-photo="${esc(val(r, 'SL EMP ID'))}">${esc(initials(r))}</span>
+  <div><b>${esc(val(r, 'FULL NAME'))}</b><small>${esc(val(r, 'SL EMP ID'))} · ${esc(val(r, 'DEPARTMENT (INTERNAL)') || val(r, 'COMPANY'))}</small></div>${right ?? statusPill(r)}</button>`; }
+function bindRows() { main.querySelectorAll('.row[data-id]').forEach(b => b.onclick = () => profile(b.dataset.id)); lazyPhotos(); }
+
+let lastQ = '';
+function lookup() {
+  main.innerHTML = `<div class="search"><input id="q" type="search" placeholder="Employee ID (SL-1234) or name" value="${esc(lastQ)}" autocomplete="off"></div><div class="list" id="res"></div>`;
+  const q = $('#q'), run = () => { lastQ = q.value; const s = norm(q.value), res = $('#res');
+    if (!s) { res.innerHTML = `<div class="empty">${rows.length} employees. Type an ID or a name.</div>`; return; }
+    const words = s.split(/[ ,]+/).filter(Boolean);
+    const hits = rows.filter(r => [r['SL EMP ID'], r['MROCK EMP ID'], r['PCL EMP ID']].some(x => norm(x) === s) ||
+      words.every(w => norm([r['FULL NAME'], r['NICKNAME'], r['NAME AS IN PASSPORT'], r['SL EMP ID']].join(' ')).includes(w)));
+    res.innerHTML = hits.length ? hits.slice(0, 60).map(r => rowHtml(r)).join('') : '<div class="empty">No employee found.</div>'; bindRows(); };
+  q.oninput = run; run(); if (!lastQ) setTimeout(() => q.focus(), 50);
+}
+function profile(id) {
+  const r = rows.find(x => norm(x['SL EMP ID']) === norm(id)); if (!r) return;
+  main.innerHTML = `<button class="back" id="bk">‹ Back</button>
+    <div class="card profile"><span class="ph" data-photo="${esc(id)}">No photo</span><div><h3>${esc(val(r, 'NAME AS IN PASSPORT') || val(r, 'FULL NAME'))}</h3>
+      <p>${esc(val(r, 'POSITION (PC /MR DESIGNATION)'))}</p><p>${esc(id)} · ${esc(val(r, 'COMPANY'))} · ${statusPill(r)}</p></div></div>
+    <div class="card"><h2>Details</h2><dl>${SHOW.map(([l, k]) => `<dt>${l}</dt><dd>${esc(val(r, k)) || '<span style="color:#aab">—</span>'}</dd>`).join('')}</dl></div>
+    <button class="btn gold" id="ed" style="width:100%">Update details</button>`;
+  $('#bk').onclick = () => show(tab); $('#ed').onclick = () => editor(r); lazyPhotos();
+}
+function editor(r) {
+  const id = val(r, 'SL EMP ID'), others = hdr.filter(h => h && !QUICK.includes(h) && !LOCKED.includes(h) && !SALARY.includes(h));
+  const field = h => `<div class="edit-row" data-h="${esc(h)}"><label>${esc(h.charAt(0) + h.slice(1).toLowerCase())}</label><input value="${esc(val(r, h))}" data-orig="${esc(val(r, h))}"></div>`;
+  main.innerHTML = `<button class="back" id="bk">‹ ${esc(val(r, 'FULL NAME'))}</button>
+    <div class="card"><h2>Common fields</h2>${QUICK.filter(h => hdr.includes(h)).map(field).join('')}</div>
+    <div class="card"><h2>All other fields</h2><input id="flt" placeholder="Filter fields (e.g. bank, spouse)" style="margin-bottom:10px">${others.map(field).join('')}</div>
+    <p style="color:var(--muted);font-size:13px">Dates are day/month/year (e.g. 25/12/2026). Salary and allowances can only be changed in the desktop app.</p>
+    <div class="bar"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="save" disabled>Save</button></div>`;
+  const inputs = [...main.querySelectorAll('.edit-row input')], changed = () => inputs.filter(i => i.value.trim() !== i.dataset.orig);
+  inputs.forEach(i => i.oninput = () => { i.classList.toggle('changed', i.value.trim() !== i.dataset.orig); $('#save').disabled = !changed().length; $('#save').textContent = changed().length ? `Save ${changed().length}` : 'Save'; });
+  $('#flt').oninput = e => { const f = norm(e.target.value); main.querySelectorAll('.card:nth-of-type(2) .edit-row').forEach(d => d.hidden = f && !d.dataset.h.includes(f)); };
+  $('#bk').onclick = $('#cancel').onclick = () => profile(id);
+  $('#save').onclick = () => {
+    const ch = changed().map(i => ({ h: i.parentNode.dataset.h, from: i.dataset.orig, to: i.value.trim() }));
+    const c = document.createElement('div'); c.className = 'confirm';
+    c.innerHTML = `<div class="sheet"><h3 style="margin:0 0 8px">Save ${ch.length} change${ch.length > 1 ? 's' : ''} for ${esc(id)}?</h3><ul>${ch.map(x => `<li><b>${esc(x.h)}</b>: “${esc(x.from) || '—'}” → “${esc(x.to) || '—'}”</li>`).join('')}</ul>
+      <div class="bar" style="position:static"><button class="btn ghost" id="no">Cancel</button><button class="btn" id="yes">Save to database</button></div></div>`;
+    document.body.appendChild(c); c.querySelector('#no').onclick = () => c.remove();
+    c.querySelector('#yes').onclick = async () => { c.querySelector('#yes').disabled = true; try { await saveChanges(r, ch); c.remove(); toast('Saved'); profile(id); } catch (e) { c.remove(); toast(e.message); } };
+  };
+}
+const colLetter = n => { let s = ''; n++; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+async function saveChanges(r, ch) {
+  // re-check the row still belongs to this employee (someone may have inserted rows meanwhile)
+  const idCol = colLetter(hdr.indexOf('SL EMP ID'));
+  const chk = await (await api(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(`'${TAB}'!${idCol}${r._row}`)}`)).json();
+  if (norm((chk.values || [[]])[0][0]) !== norm(r['SL EMP ID'])) { await loadData(); throw new Error('The sheet changed meanwhile. Open the employee again and retry.'); }
+  const data = ch.filter(x => !SALARY.includes(x.h) && !LOCKED.includes(x.h)).map(x => ({ range: `'${TAB}'!${colLetter(hdr.indexOf(x.h))}${r._row}`, values: [[/^-?(0|[1-9]\d*)(\.\d+)?$/.test(x.to) ? Number(x.to) : x.to]] }));
+  await api(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate`, { method: 'POST', body: JSON.stringify({ valueInputOption: 'RAW', data }) });
+  ch.forEach(x => r[x.h] = x.to);
+}
+
+let teamSel = { dept: '', status: 'ACTIVE' };
+function team() {
+  const depts = [...new Set(rows.map(r => val(r, 'DEPARTMENT (INTERNAL)')).filter(Boolean))].sort();
+  if (!teamSel.dept) teamSel.dept = depts[0] || '';
+  main.innerHTML = `<div class="search"><select id="dept">${depts.map(d => `<option ${d === teamSel.dept ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
+    <select id="st" style="max-width:120px"><option value="">All</option><option value="ACTIVE" ${teamSel.status === 'ACTIVE' ? 'selected' : ''}>Active</option><option value="INACTIVE" ${teamSel.status === 'INACTIVE' ? 'selected' : ''}>Inactive</option></select></div>
+    <div id="tc" style="color:var(--muted);font-size:14px;margin-bottom:8px"></div><div class="list" id="tl"></div>`;
+  const run = () => { teamSel = { dept: $('#dept').value, status: $('#st').value };
+    const hits = rows.filter(r => val(r, 'DEPARTMENT (INTERNAL)') === teamSel.dept && (!teamSel.status || norm(r['ACTIVE/ INACTIVE']) === teamSel.status));
+    $('#tc').textContent = `${hits.length} employee${hits.length === 1 ? '' : 's'}`;
+    $('#tl').innerHTML = hits.map(r => rowHtml(r, `<small style="color:var(--muted);text-align:right">Visa<br>${esc(val(r, 'MOST RECENT EXPIRY DATE') || '—')}</small>`)).join(''); bindRows(); };
+  $('#dept').onchange = $('#st').onchange = run; run();
+}
+
+function alerts() {
+  const act = rows.filter(r => norm(r['ACTIVE/ INACTIVE']) === 'ACTIVE'), now = new Date(), sameMonth = d => d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  const exp = (key, within) => act.map(r => ({ r, d: parseDate(r[key]) })).filter(x => x.d && daysTo(x.d) <= within).sort((a, b) => a.d - b.d);
+  return [
+    { title: 'Visas expired or due in 60 days', items: exp('MOST RECENT EXPIRY DATE', 60), key: 'MOST RECENT EXPIRY DATE' },
+    { title: 'Passports expired or due in 6 months', items: exp('DATE OF EXPIRY (MM/DD/YYYY)', 180), key: 'DATE OF EXPIRY (MM/DD/YYYY)' },
+    { title: 'Joined this month', items: rows.map(r => ({ r, d: parseDate(r['MROCK /REAL JOIN DATE (MM/DD/YY)']) })).filter(x => sameMonth(x.d)), key: 'MROCK /REAL JOIN DATE (MM/DD/YY)', info: 1 },
+    { title: 'Leaving / left this month', items: rows.map(r => ({ r, d: parseDate(r['REAL RESIGNATION DATE (MM/DD/YYYY)']) })).filter(x => sameMonth(x.d)), key: 'REAL RESIGNATION DATE (MM/DD/YYYY)', info: 1 },
+  ];
+}
+function alertsView() {
+  const g = alerts(), act = rows.filter(r => norm(r['ACTIVE/ INACTIVE']) === 'ACTIVE');
+  main.innerHTML = `<div class="stat"><div><b>${act.length}</b><small>Active staff</small></div><div><b>${g[0].items.length}</b><small>Visas due</small></div><div><b>${g[1].items.length}</b><small>Passports due</small></div></div>` +
+    g.map(s => `<div class="card"><h2>${s.title} · ${s.items.length}</h2><div class="list">${s.items.length ? s.items.map(x => { const n = daysTo(x.d);
+      const pill = s.info ? `<span class="pill ok">${esc(x.r[s.key])}</span>` : `<span class="pill ${n < 0 ? 'no' : n <= 30 ? 'warn' : 'ok'}">${n < 0 ? 'Expired' : n === 0 ? 'Today' : n + ' days'}</span>`;
+      return rowHtml(x.r, pill); }).join('') : '<div class="empty" style="padding:10px">Nothing here</div>'}</div></div>`).join('') +
+    `<button class="btn ghost" id="rf" style="width:100%">Refresh from the database</button>`;
+  bindRows(); $('#rf').onclick = async () => { main.innerHTML = '<div class="spin"></div>'; await loadData(); alertsView(); toast('Updated'); };
+}
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+initAuth();
+</script>
+</body>
+</html>
