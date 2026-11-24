@@ -1,0 +1,885 @@
+{
+ "scale": 0.7625,
+ "fields": {
+  "F18": {
+   "page": 0,
+   "bbox": [
+    275.93,
+    279.97,
+    302.38,
+    289.26
+   ],
+   "baseline": 287.45,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 728890,
+   "halign": "center",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 261.05,
+   "right": 316.38,
+   "height": 21.16
+  },
+  "G18": {
+   "page": 0,
+   "bbox": [
+    333.55,
+    279.97,
+    361.44,
+    289.26
+   ],
+   "baseline": 287.45,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 728890,
+   "halign": "center",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 319.38,
+   "right": 374.71,
+   "height": 21.16
+  },
+  "H18": {
+   "page": 0,
+   "bbox": [
+    391.87,
+    279.97,
+    419.76,
+    289.26
+   ],
+   "baseline": 287.45,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 728890,
+   "halign": "center",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 377.71,
+   "right": 433.04,
+   "height": 21.16
+  },
+  "F44": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    662.56,
+    284.81,
+    670.96
+   ],
+   "baseline": 668.86,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F45": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    678.76,
+    284.81,
+    687.16
+   ],
+   "baseline": 685.06,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F43": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    646.36,
+    284.81,
+    654.76
+   ],
+   "baseline": 652.66,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F34": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    525.25,
+    284.81,
+    533.65
+   ],
+   "baseline": 531.55,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F35": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    541.45,
+    284.81,
+    549.85
+   ],
+   "baseline": 547.75,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F36": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    557.65,
+    284.81,
+    566.05
+   ],
+   "baseline": 563.95,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F33": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    509.05,
+    284.81,
+    517.45
+   ],
+   "baseline": 515.35,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F29": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    449.89,
+    284.81,
+    458.29
+   ],
+   "baseline": 456.19,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F22": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    325.79,
+    284.81,
+    334.19
+   ],
+   "baseline": 332.09,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F23": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    341.99,
+    284.81,
+    350.39
+   ],
+   "baseline": 348.29,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 21.16
+  },
+  "F24": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    364.67,
+    284.81,
+    373.07
+   ],
+   "baseline": 370.97,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 21.16
+  },
+  "F25": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    387.35,
+    284.81,
+    395.75
+   ],
+   "baseline": 393.65,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 24.3
+  },
+  "F28": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    433.69,
+    284.81,
+    442.09
+   ],
+   "baseline": 439.99,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F14": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    191.84,
+    284.81,
+    200.24
+   ],
+   "baseline": 198.14,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "I18": {
+   "page": 0,
+   "bbox": [
+    485.26,
+    279.97,
+    509.91,
+    289.26
+   ],
+   "baseline": 287.45,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 728890,
+   "halign": "center",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 436.04,
+   "right": 558.27,
+   "height": 21.16
+  },
+  "F10": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    117.2,
+    284.81,
+    125.6
+   ],
+   "baseline": 123.5,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  },
+  "F11": {
+   "page": 0,
+   "bbox": [
+    261.05,
+    133.4,
+    284.81,
+    141.8
+   ],
+   "baseline": 139.7,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 24.3
+  },
+  "D63": {
+   "page": 1,
+   "bbox": [
+    158.66,
+    289.33,
+    186.19,
+    298.62
+   ],
+   "baseline": 296.81,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 0,
+   "halign": "center",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 144.4,
+   "right": 199.73,
+   "height": 22.87
+  },
+  "E63": {
+   "page": 1,
+   "bbox": [
+    217.25,
+    289.33,
+    244.29,
+    298.62
+   ],
+   "baseline": 296.81,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 0,
+   "halign": "center",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 202.73,
+   "right": 258.05,
+   "height": 22.87
+  },
+  "F63": {
+   "page": 1,
+   "bbox": [
+    275.93,
+    289.33,
+    302.38,
+    298.62
+   ],
+   "baseline": 296.81,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 0,
+   "halign": "center",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 261.05,
+   "right": 316.38,
+   "height": 22.87
+  },
+  "G63": {
+   "page": 1,
+   "bbox": [
+    333.55,
+    289.33,
+    361.44,
+    298.62
+   ],
+   "baseline": 296.81,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 0,
+   "halign": "center",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 319.38,
+   "right": 374.71,
+   "height": 22.87
+  },
+  "H63": {
+   "page": 1,
+   "bbox": [
+    391.87,
+    289.33,
+    419.76,
+    298.62
+   ],
+   "baseline": 296.81,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 0,
+   "halign": "center",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 377.71,
+   "right": 433.04,
+   "height": 22.87
+  },
+  "I63": {
+   "page": 1,
+   "bbox": [
+    451.78,
+    289.33,
+    476.43,
+    298.62
+   ],
+   "baseline": 296.81,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 0,
+   "halign": "center",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 436.04,
+   "right": 491.36,
+   "height": 22.87
+  },
+  "D64": {
+   "page": 1,
+   "bbox": [
+    144.38,
+    314.51,
+    169.24,
+    322.91
+   ],
+   "baseline": 320.81,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 144.4,
+   "right": 199.73,
+   "height": 22.87
+  },
+  "E64": {
+   "page": 1,
+   "bbox": [
+    202.73,
+    314.51,
+    226.5,
+    322.91
+   ],
+   "baseline": 320.81,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 202.73,
+   "right": 258.05,
+   "height": 22.87
+  },
+  "F64": {
+   "page": 1,
+   "bbox": [
+    261.05,
+    314.51,
+    284.59,
+    322.91
+   ],
+   "baseline": 320.81,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 261.05,
+   "right": 316.38,
+   "height": 22.87
+  },
+  "G64": {
+   "page": 1,
+   "bbox": [
+    319.39,
+    314.51,
+    344.36,
+    322.91
+   ],
+   "baseline": 320.81,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 319.38,
+   "right": 374.71,
+   "height": 22.87
+  },
+  "H64": {
+   "page": 1,
+   "bbox": [
+    377.71,
+    314.51,
+    402.67,
+    322.91
+   ],
+   "baseline": 320.81,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 377.71,
+   "right": 433.04,
+   "height": 22.87
+  },
+  "I64": {
+   "page": 1,
+   "bbox": [
+    436.03,
+    314.51,
+    457.88,
+    322.91
+   ],
+   "baseline": 320.81,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 436.04,
+   "right": 491.36,
+   "height": 22.87
+  },
+  "J64": {
+   "page": 1,
+   "bbox": [
+    494.38,
+    314.51,
+    517.06,
+    322.91
+   ],
+   "baseline": 320.81,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 494.36,
+   "right": 558.27,
+   "height": 22.87
+  },
+  "D65": {
+   "page": 1,
+   "bbox": [
+    144.38,
+    338.87,
+    169.24,
+    347.27
+   ],
+   "baseline": 345.17,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 144.4,
+   "right": 199.73,
+   "height": 22.87
+  },
+  "E65": {
+   "page": 1,
+   "bbox": [
+    202.73,
+    338.87,
+    226.5,
+    347.27
+   ],
+   "baseline": 345.17,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 202.73,
+   "right": 258.05,
+   "height": 22.87
+  },
+  "F65": {
+   "page": 1,
+   "bbox": [
+    261.05,
+    338.87,
+    284.59,
+    347.27
+   ],
+   "baseline": 345.17,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 261.05,
+   "right": 316.38,
+   "height": 22.87
+  },
+  "G65": {
+   "page": 1,
+   "bbox": [
+    319.39,
+    338.87,
+    344.36,
+    347.27
+   ],
+   "baseline": 345.17,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 319.38,
+   "right": 374.71,
+   "height": 22.87
+  },
+  "H65": {
+   "page": 1,
+   "bbox": [
+    377.71,
+    338.87,
+    402.67,
+    347.27
+   ],
+   "baseline": 345.17,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 377.71,
+   "right": 433.04,
+   "height": 22.87
+  },
+  "I65": {
+   "page": 1,
+   "bbox": [
+    436.03,
+    338.87,
+    457.88,
+    347.27
+   ],
+   "baseline": 345.17,
+   "size": 8.4,
+   "bold": false,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 436.04,
+   "right": 491.36,
+   "height": 22.87
+  },
+  "J65": {
+   "page": 1,
+   "bbox": [
+    494.38,
+    338.87,
+    517.06,
+    347.27
+   ],
+   "baseline": 345.17,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 494.36,
+   "right": 558.27,
+   "height": 22.87
+  },
+  "E60": {
+   "page": 1,
+   "bbox": [
+    202.73,
+    258.49,
+    229.77,
+    267.78
+   ],
+   "baseline": 265.97,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 202.73,
+   "right": 316.38,
+   "height": 10.58
+  },
+  "I60": {
+   "page": 1,
+   "bbox": [
+    436.03,
+    258.49,
+    460.68,
+    267.78
+   ],
+   "baseline": 265.97,
+   "size": 8.4,
+   "bold": true,
+   "serif": true,
+   "color": 728890,
+   "halign": "general",
+   "valign": "bottom",
+   "wrap": false,
+   "left": 436.04,
+   "right": 558.27,
+   "height": 10.58
+  },
+  "B51": {
+   "page": 1,
+   "bbox": [
+    36.36,
+    66.68,
+    62.46,
+    75.97
+   ],
+   "baseline": 74.16,
+   "size": 8.4,
+   "bold": false,
+   "serif": true,
+   "color": 0,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 36.32,
+   "right": 558.27,
+   "height": 73.2
+  },
+  "F53": {
+   "page": 1,
+   "bbox": [
+    261.05,
+    183.56,
+    284.81,
+    191.96
+   ],
+   "baseline": 189.86,
+   "size": 8.4,
+   "bold": true,
+   "serif": false,
+   "color": 728890,
+   "halign": "general",
+   "valign": "top",
+   "wrap": true,
+   "left": 261.05,
+   "right": 558.27,
+   "height": 15.15
+  }
+ }
+}

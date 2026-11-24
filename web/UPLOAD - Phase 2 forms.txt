@@ -1,0 +1,20 @@
+Central HRA web app - Phase 2 (Forms) upload steps
+==================================================
+
+1. Open https://github.com/Ktan-work/masterock-hr-mobile/upload/main
+2. From this folder (HR Automation App\web), drag BOTH of these onto the upload page:
+     - hra.html                (replaces the current one)
+     - the whole "hra-assets" folder   (drag the folder itself, so its subfolders pcforms and claimforms come along)
+3. Click "Commit changes".
+4. Wait about 1-2 minutes, then open https://ktan-work.github.io/masterock-hr-mobile/hra.html
+   (press Ctrl+F5 once so the browser loads the new version).
+
+Also in this hra.html (24 Nov):
+  - Sign in works again after "Sign out" (account chooser always shows; blocked/closed pop-up now shows a message)
+  - After Google sign-in, a 4-digit PIN is emailed to ktan6689@gmail.com and must be entered to open the app
+    (once per sign-in; refreshing the page in the same session doesn't ask again)
+
+New on the web app:
+  Employee Info Form (with company dropdown), Residence Visa, EPF / ETF claims (Form K + Form VI),
+  COE, ID Photos and PC Forms (downloaded as one ZIP).
+The PDFs come out the same as the desktop app's.
