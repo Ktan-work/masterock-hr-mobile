@@ -254,7 +254,8 @@ async function api(url, opts = {}) {
   const headers = { Authorization: 'Bearer ' + token, ...(opts.body && typeof opts.body === 'string' ? { 'Content-Type': 'application/json' } : {}), ...(opts.headers || {}) };
   const r = await fetch(url, { ...opts, headers });
   if (r.status === 401) { token = null; try { sessionStorage.removeItem('hraTok'); } catch (e) {} showSignin('Your session ended. Please sign in again.'); throw new Error('signed out'); }
-  if (!r.ok) { const e = new Error(r.status === 403 ? 'No access' : 'Google returned ' + r.status); e.status = r.status; throw e; }
+  if (!r.ok) { const e = new Error(r.status === 403 ? 'No access' : 'Google returned ' + r.status); e.status = r.status;
+    try { e.detail = await r.text(); } catch (x) { e.detail = ''; } throw e; }
   return r;
 }
 const sheetUrl = (id, range) => `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(range)}`;
@@ -513,6 +514,15 @@ async function checkCode(code) {
   const left = 3 - ++codeState.tries; if (left <= 0) { codeState = null; return [false, 'Wrong passcode too many times - click "Send a new code".']; }
   return [false, `Wrong passcode - ${left} ${left === 1 ? 'try' : 'tries'} left.`];
 }
+function gmailProblem(e) {
+  const d = e.detail || '';
+  if (/SERVICE_DISABLED|accessNotConfigured|has not been used|is disabled/i.test(d))
+    return 'the Gmail API is switched off in the Google Cloud project. Kevin: open console.cloud.google.com/apis/library/gmail.googleapis.com?project=masterock-hr-514313 and click Enable, wait 2 minutes, then click "Send a new code".';
+  if (/SCOPE_INSUFFICIENT|insufficient/i.test(d))
+    return 'permission to send email was not given at sign-in. Click "Give Gmail permission" and tick the Gmail box on the Google screen.';
+  if (e.status === 403) return 'Google refused (' + (d.match(/"message":\s*"([^"]+)"/) || [, '403'])[1] + ').';
+  return e.message;
+}
 function ensurePasscode(what, unlock = true) {
   if (unlock && Date.now() < unlockedUntil) return Promise.resolve(true);
   return new Promise(resolve => {
@@ -524,7 +534,12 @@ function ensurePasscode(what, unlock = true) {
     const say = (t, bad) => { const p = m.querySelector('#pcmsg'); p.textContent = t; p.className = 'small ' + (bad ? 'msg-err' : 'msg-ok'); };
     const send = async () => { const b = m.querySelector('#pcsend'); b.disabled = true; say('Sending a passcode…');
       try { await sendCode(what); say(`Passcode sent to ${OWNER_EMAIL}. It works for 10 minutes.`); }
-      catch (e) { say('Could not send the passcode: ' + (e.status === 403 ? 'Gmail sending is not allowed for this account yet.' : e.message), true); }
+      catch (e) { say('Could not send the passcode: ' + gmailProblem(e), true);
+        if (/SCOPE_INSUFFICIENT|insufficient/i.test(e.detail || '')) {        // Gmail box was not ticked at sign-in: ask Google again
+          const again = document.createElement('button'); again.className = 'btn gold'; again.textContent = 'Give Gmail permission';
+          again.onclick = () => { m.remove(); resolve(false); try { sessionStorage.removeItem('hraTok'); } catch (x) {} tokenClient.requestAccessToken({ prompt: 'consent' }); };
+          m.querySelector('.foot').prepend(again);
+        } }
       setTimeout(() => b.disabled = false, 15000); m.querySelector('#pc').focus(); };
     const done = ok => { m.remove(); if (ok && unlock) unlockedUntil = Date.now() + 10 * 60e3; resolve(ok); };
     const tryIt = async () => { const v = m.querySelector('#pc').value.trim(); if (!/^\d{4}$/.test(v)) return say('Enter all 4 digits.', true);
