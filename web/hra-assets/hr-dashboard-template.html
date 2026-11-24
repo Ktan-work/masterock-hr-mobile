@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masterock HR KPI Dashboard — Overview & Workforce — Aug 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050d1a;--surface:#0c1929;--s2:#0f2035;--border:#1a3050;
+  --accent:#00c9ff;--a2:#e36bff;--a3:#39ff98;--a4:#ffb347;
+  --text:#e8f4ff;--muted:#6b8aaa;
+  --mr:#00c9ff;--pc:#e36bff;--mnl:#39ff98;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+
+/* Cultural motifs are applied directly to the region header panels (see .region-hdr.sl / .region-hdr.mnl below) */
+
+/* ── Tier 1 interactivity: clickable drill-down rows ── */
+.clickable-row td{transition:background .15s;}
+.clickable-row:hover td{background:rgba(0,201,255,.06);}
+.nat-detail-row td, .dept-detail-row td, .off-detail-row td{border-bottom:1px solid rgba(26,48,80,.5);}
+
+/* ── Top feature strip: on-this-day feature (isolated, does not affect dashboard layout) ── */
+.moon-strip{
+  position:relative;
+  margin:14px 28px 14px;
+  padding:16px 26px;
+  background:radial-gradient(115% 200% at 90% 50%, rgba(28,150,168,.42), rgba(10,58,74,.30) 45%, rgba(5,24,34,.85) 78%), linear-gradient(90deg, rgba(5,16,26,.92), rgba(6,26,38,.72));
+  border:1px solid rgba(0,201,255,.16);
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  gap:22px;
+  overflow:hidden;
+}
+.moon-strip-label{
+  font-family:'Syne',sans-serif;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--accent);
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.moon-strip-text{
+  font-size:12px;
+  color:var(--muted);
+  flex:1;
+  min-width:0;
+  line-height:1.55;
+}
+.moon-strip-text strong{color:var(--text);font-weight:500;}
+
+
+/* ── Admin placeholder tabs (Office / Fleet / Accommodation) ── */
+.admin-hero{display:flex;align-items:center;gap:16px;background:linear-gradient(120deg,rgba(0,201,255,.08),rgba(227,107,255,.05));border:1px solid rgba(0,201,255,.16);border-radius:14px;padding:22px 24px;margin-bottom:22px;}
+.admin-hero-icon{flex-shrink:0;width:54px;height:54px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:26px;background:rgba(0,201,255,.1);border:1px solid rgba(0,201,255,.25);}
+.admin-hero h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text);margin:0 0 3px;letter-spacing:.01em;}
+.admin-hero p{font-size:12px;color:var(--muted);margin:0;line-height:1.5;}
+.admin-badge{margin-left:auto;flex-shrink:0;font-family:'Syne',sans-serif;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--a4);background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.32);padding:6px 12px;border-radius:20px;}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;}
+.admin-card{background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:12px;padding:18px;position:relative;overflow:hidden;}
+.admin-card::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent,transparent 9px,rgba(255,255,255,.012) 9px,rgba(255,255,255,.012) 18px);pointer-events:none;}
+.admin-card-hd{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.admin-card-sub{font-size:10px;color:var(--muted);margin-bottom:14px;}
+.admin-metric-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(0,201,255,.07);}
+.admin-metric-row:last-child{border-bottom:none;}
+.admin-metric-row .m-label{font-size:12px;color:var(--text);}
+.admin-metric-row .m-val{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--muted);opacity:.5;}
+.admin-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:26px 16px;border:1.5px dashed rgba(0,201,255,.2);border-radius:11px;background:rgba(0,201,255,.02);}
+.admin-empty .ae-icon{font-size:30px;opacity:.5;margin-bottom:10px;}
+.admin-empty .ae-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);opacity:.75;margin-bottom:5px;}
+.admin-empty .ae-d{font-size:11px;color:var(--muted);line-height:1.5;max-width:360px;}
+.admin-note{margin-top:18px;font-size:10px;color:var(--muted);text-align:center;font-style:italic;opacity:.7;}
+
+/* ── News corner (right side of feature strip) — isolated ── */
+.news-corner{flex-shrink:0;width:300px;align-self:stretch;display:flex;flex-direction:column;background:linear-gradient(180deg, rgba(6,22,34,.72), rgba(5,16,26,.86));border:1px solid rgba(0,201,255,.18);border-radius:10px;padding:10px 0 8px;overflow:hidden;position:relative;}
+.news-corner-hdr{display:flex;align-items:center;gap:8px;padding:0 14px 8px;border-bottom:1px solid rgba(0,201,255,.14);margin-bottom:4px;}
+.news-live{font-family:'Syne',sans-serif;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#ff6464;display:flex;align-items:center;gap:5px;}
+.news-live::before{content:'';width:7px;height:7px;border-radius:50%;background:#ff6464;box-shadow:0 0 0 0 rgba(255,100,100,.6);animation:newsPulse 1.6s infinite;}
+@keyframes newsPulse{0%{box-shadow:0 0 0 0 rgba(255,100,100,.55);}70%{box-shadow:0 0 0 8px rgba(255,100,100,0);}100%{box-shadow:0 0 0 0 rgba(255,100,100,0);}}
+.news-ttl{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);}
+.news-viewport{position:relative;height:104px;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);}
+.news-track{display:flex;flex-direction:column;animation:newsScroll 24s linear infinite;}
+.news-corner:hover .news-track{animation-play-state:paused;}
+@keyframes newsScroll{0%{transform:translateY(0);}100%{transform:translateY(-50%);}}
+.news-item{display:flex;gap:9px;padding:7px 14px;align-items:flex-start;}
+.news-tag{flex-shrink:0;font-family:'Syne',sans-serif;font-size:8px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border-radius:5px;margin-top:1px;}
+.news-tag.sl{background:rgba(255,179,71,.16);color:var(--a4);border:1px solid rgba(255,179,71,.3);}
+.news-tag.gl{background:rgba(0,201,255,.14);color:var(--accent);border:1px solid rgba(0,201,255,.3);}
+.news-txt{font-size:10.5px;line-height:1.4;color:var(--muted);}
+@media(max-width:700px){.news-corner{width:100%;order:4;}}
+/* Feature visual: On This Day in History (isolated) */
+.moon-stage{
+  position:relative;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+}
+.moon-svg{
+  width:150px;
+  height:auto;
+  display:block;
+  animation:moonBob 7s ease-in-out infinite;
+}
+@keyframes moonBob{
+  0%,100%{ transform:translateY(0); }
+  50%    { transform:translateY(-4px); }
+}
+@keyframes brainPulse{
+  0%,100%{ transform:translateY(0) scale(1); }
+  50%    { transform:translateY(-3px) scale(1.04); }
+}
+.moon-strip-text .feat-split{
+  display:block;
+  margin-top:7px;
+  padding-top:7px;
+  border-top:1px solid rgba(0,201,255,.14);
+}
+@media(max-width:700px){
+  .moon-strip{flex-wrap:wrap;justify-content:center;text-align:center;}
+  .moon-strip-text{flex-basis:100%;order:3;}
+  .moon-stage{margin:0 auto;}
+}
+
+
+body{font-family:'DM Sans',sans-serif;background:transparent;color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#0c1929,#081420);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;}
+.hlogo{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:#000;margin-right:14px;flex-shrink:0;}
+.htitle{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+.hsub{font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-top:2px;}
+.hdate{font-family:'Syne',sans-serif;font-size:11px;color:var(--accent);background:rgba(0,201,255,.08);border:1px solid rgba(0,201,255,.2);padding:5px 13px;border-radius:20px;letter-spacing:.05em;white-space:nowrap;}
+
+/* TABS */
+.tabs{display:flex;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border);}
+.tab-btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:var(--muted);padding:14px 20px;border:none;background:transparent;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;transition:all .2s;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:7px;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.pcat td{background:rgba(255,255,255,.03);font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);padding-top:9px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* WAVING FLAG */
+@keyframes flagWave{
+  0%   { transform: rotate(0deg) scale(1); }
+  15%  { transform: rotate(8deg) scale(1.05) translateY(-3px); }
+  30%  { transform: rotate(-4deg) scale(0.98) translateY(1px); }
+  45%  { transform: rotate(6deg) scale(1.03) translateY(-2px); }
+  60%  { transform: rotate(-3deg) scale(0.99); }
+  75%  { transform: rotate(5deg) scale(1.02) translateY(-1px); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.wflag{display:inline-block;animation:flagWave 2.5s ease-in-out infinite;transform-origin:bottom center;margin-right:16px;filter:drop-shadow(0 0 14px rgba(255,255,255,0.25));line-height:1;vertical-align:middle;}
+.wflag img{width:90px;height:auto;display:block;border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,0.4);}
+
+/* ═══ OVERVIEW ═══ */
+.ov-main{padding:0 28px 40px;}
+
+/* Total HC Banner (overview only) */
+.total-banner{display:flex;justify-content:center;padding:22px 0 8px;}
+.total-card{text-align:center;background:rgba(0,201,255,.04);border:1px solid rgba(0,201,255,.18);padding:14px 56px;border-radius:14px;box-shadow:0 0 30px rgba(0,201,255,.08);}
+.total-num{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;color:var(--accent);line-height:1;}
+.total-lbl{font-size:11px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;margin-top:5px;}
+
+/* Two-column partition */
+.partition{display:grid;grid-template-columns:1.9fr 1.1fr;gap:0;position:relative;margin-top:18px;}
+
+/* Glowing divider */
+.partition::after{content:'';position:absolute;top:0;bottom:0;left:63.2%;width:3px;background:linear-gradient(180deg,rgba(255,179,71,.9) 0%,rgba(255,179,71,.4) 60%,rgba(26,48,80,.2) 100%);box-shadow:0 0 14px rgba(255,179,71,.3);border-radius:2px;pointer-events:none;}
+
+.col{display:flex;flex-direction:column;gap:22px;padding:18px 0;}
+.col.left{padding-right:32px;}
+.col.right{padding-left:28px;}
+
+/* Region anchor header */
+.region-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-radius:10px;border-left:5px solid var(--mr);position:relative;overflow:hidden;}
+.region-hdr.sl{background:linear-gradient(90deg,rgba(0,201,255,.14),rgba(0,201,255,.03));border-left-color:var(--mr);}
+.region-hdr.mnl{background:linear-gradient(90deg,rgba(57,255,152,.14),rgba(57,255,152,.03));border-left-color:var(--mnl);}
+.region-skyline{position:absolute;left:0;right:0;bottom:0;height:62px;background-repeat:repeat-x;background-position:bottom left;pointer-events:none;z-index:0;}
+.region-skyline.sl{
+  opacity:0.3;
+  left:170px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='90' viewBox='0 0 600 90'%3E%3Cg fill='none' stroke='%2300c9ff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 90 L10 75 Q10 62 35 62 Q60 62 60 75 L60 90'/%3E%3Cline x1='35' y1='62' x2='35' y2='90'/%3E%3Cpath d='M95 90 L95 35 M95 35 L95 18 M88 35 L102 35 M90 28 L100 28 M90 22 L100 22'/%3E%3Ccircle cx='95' cy='35' r='7'/%3E%3Cpath d='M140 90 L140 45 Q140 35 160 30 Q180 35 180 45 L180 90 M140 50 L180 50 M145 90 L145 60 L150 60 L150 90 M155 90 L155 60 L160 60 L160 90 M165 90 L165 60 L170 60 L170 90 M170 90 L170 60 L175 60 L175 90'/%3E%3Cpath d='M205 90 L205 30 L213 30 L213 90 M205 30 L209 20 L213 30'/%3E%3Cpath d='M250 90 L250 50 Q250 40 265 40 L265 30 L280 30 L280 40 Q295 40 295 50 L295 90 M260 90 L260 65 L270 65 L270 90 M275 90 L275 65 L285 65 L285 90'/%3E%3Ccircle cx='272' cy='25' r='5'/%3E%3Cpath d='M330 90 L330 55 L345 35 L360 55 L360 90 M330 70 L360 70'/%3E%3Cpath d='M345 35 L345 25 L350 20 L345 15'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:300px 45px;
+}
+.region-skyline.mnl{
+  opacity:0.22;
+  left:140px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='80' viewBox='0 0 400 80'%3E%3Cg fill='%2339ff98'%3E%3Crect x='5' y='40' width='18' height='40'/%3E%3Crect x='26' y='25' width='14' height='55'/%3E%3Crect x='43' y='45' width='16' height='35'/%3E%3Crect x='62' y='15' width='12' height='65'/%3E%3Crect x='77' y='35' width='20' height='45'/%3E%3Crect x='100' y='5' width='10' height='75'/%3E%3Crect x='113' y='30' width='14' height='50'/%3E%3Crect x='130' y='42' width='18' height='38'/%3E%3Crect x='151' y='20' width='12' height='60'/%3E%3Crect x='166' y='48' width='16' height='32'/%3E%3Crect x='185' y='10' width='14' height='70'/%3E%3Crect x='202' y='33' width='18' height='47'/%3E%3Crect x='223' y='38' width='12' height='42'/%3E%3Crect x='238' y='18' width='16' height='62'/%3E%3Crect x='257' y='45' width='14' height='35'/%3E%3Crect x='274' y='27' width='20' height='53'/%3E%3Crect x='297' y='8' width='12' height='72'/%3E%3Crect x='312' y='40' width='16' height='40'/%3E%3Crect x='331' y='22' width='14' height='58'/%3E%3Crect x='348' y='50' width='18' height='30'/%3E%3Crect x='369' y='15' width='12' height='65'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:260px 52px;
+}
+
+.region-title{display:flex;align-items:center;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.05em;}
+.region-badge{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;padding:4px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;}
+
+/* Section label */
+.slabel{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.slabel::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* Grids */
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.g1{display:grid;grid-template-columns:1fr;gap:14px;}
+
+/* Branch cards */
+.bc{background:var(--s2);border:1px solid rgba(0,201,255,.1);border-radius:11px;padding:16px;position:relative;}
+.bc-name{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:4px;}
+.bc-num{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;line-height:1.05;margin-bottom:10px;}
+.bc-sub{font-size:10px;color:var(--muted);margin-top:-6px;margin-bottom:10px;}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid var(--border);font-size:12px;}
+.mrow span:first-child{color:var(--muted);}
+.mrow span:last-child{font-weight:600;font-family:'Syne',sans-serif;}
+
+/* Attendance table */
+.att{width:100%;border-collapse:collapse;font-size:12px;}
+.att th{text-align:left;color:var(--muted);font-weight:500;font-size:10px;letter-spacing:.07em;text-transform:uppercase;padding:0 0 6px;border-bottom:1px solid var(--border);}
+.att td{padding:6px 0;border-bottom:1px solid rgba(26,48,80,.35);}
+.att th:not(:first-child),.att td:not(:first-child){text-align:right;}
+.rbar{display:flex;align-items:center;gap:6px;justify-content:flex-end;}
+.rb{width:44px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.rf{height:100%;border-radius:2px;}
+
+/* Chart cards */
+.cc{background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:11px;padding:16px;}
+.cc-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;margin-bottom:2px;}
+.cc-sub{font-size:10px;color:var(--muted);margin-bottom:12px;}
+
+/* Compliance bars */
+.cp-item{margin-bottom:12px;}
+.cp-hdr{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;}
+.cp-pct{font-family:'Syne',sans-serif;font-weight:700;}
+.cp-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.cp-fill{height:100%;border-radius:3px;}
+.cp-note{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* ═══ WORLD MAP ═══ */
+.map-main{padding:24px 28px;}
+.globe-wrap{position:relative;border-radius:14px;overflow:hidden;border:1px solid rgba(0,201,255,.12);background:#020c1a;}
+#globe-canvas{width:100%;height:600px;display:block;}
+.globe-overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;}
+.globe-hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--muted);background:rgba(5,13,26,.8);padding:5px 14px;border-radius:20px;border:1px solid var(--border);white-space:nowrap;}
+
+/* Country info panel */
+.country-panel{position:absolute;top:18px;right:18px;width:260px;background:rgba(8,18,35,.96);border:1px solid rgba(0,201,255,.25);border-radius:12px;padding:18px;backdrop-filter:blur(16px);display:none;pointer-events:all;}
+.country-panel.show{display:block;}
+.cp-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;}
+.cp-country{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--accent);margin-bottom:14px;}
+.cp-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px solid rgba(26,48,80,.4);}
+.cp-row:last-child{border:none;}
+.cp-lbl{color:var(--muted);}
+.cp-val{font-weight:600;font-family:'Syne',sans-serif;}
+
+/* Map legend */
+.map-legend{position:absolute;bottom:18px;left:18px;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
+.ml-item{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--muted);}
+.ml-dot{width:9px;height:9px;border-radius:50%;}
+
+/* Map sections below globe */
+.map-sections{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px;}
+
+/* ═══ INCOMING ═══ */
+.inc-main{padding:24px 28px;}
+
+/* Partition for incoming */
+.inc-partition{display:grid;grid-template-columns:1fr 1fr;gap:0;position:relative;margin-top:4px;}
+.inc-partition::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:3px;background:linear-gradient(180deg,rgba(255,179,71,.8) 0%,rgba(255,179,71,.4) 60%,rgba(26,48,80,.1) 100%);box-shadow:0 0 12px rgba(255,179,71,.25);border-radius:2px;pointer-events:none;}
+.inc-col{display:flex;flex-direction:column;gap:18px;padding:0;}
+.inc-col.left{padding-right:26px;}
+.inc-col.right{padding-left:26px;}
+
+/* Incoming region header */
+.inc-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:10px;}
+.inc-hdr.mr-hdr{background:linear-gradient(90deg,rgba(0,201,255,.12),rgba(0,201,255,.03));border-left:4px solid var(--mr);}
+.inc-hdr.pc-hdr{background:linear-gradient(90deg,rgba(227,107,255,.12),rgba(227,107,255,.03));border-left:4px solid var(--pc);}
+.inc-hdr-title{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;letter-spacing:.04em;}
+.inc-hdr-count{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;}
+
+/* Column count in incoming header */
+.inc-col-count{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;line-height:1;letter-spacing:-0.02em;}
+/* Keep both columns same internal spacing so submission status aligns */
+.inc-col{display:flex;flex-direction:column;gap:18px;}
+
+/* Status table */
+.stbl{width:100%;border-collapse:collapse;}
+.stbl th{text-align:left;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0 8px 8px;border-bottom:1px solid var(--border);font-weight:500;}
+.stbl td{padding:8px;font-size:12px;border-bottom:1px solid rgba(26,48,80,.3);vertical-align:middle;}
+.stbl th:not(:first-child),.stbl td:not(:first-child){text-align:right;}
+.stbl tr.total-row td{font-weight:700;font-family:'Syne',sans-serif;border-top:1px solid var(--border);}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 9px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.04em;}
+.b-sub{background:rgba(0,201,255,.12);color:#00c9ff;}
+.b-ev{background:rgba(255,179,71,.12);color:#ffb347;}
+.b-ev2{background:rgba(255,150,50,.12);color:#ff9632;}
+.b-wait{background:rgba(255,100,100,.12);color:#ff6464;}
+.b-jo{background:rgba(144,144,255,.12);color:#9090ff;}
+.b-can{background:rgba(255,80,80,.12);color:#ff5050;}
+
+/* Info tables */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.info-card{background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:10px;padding:14px;}
+.info-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px;color:var(--muted);}
+.info-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.info-tbl th{color:var(--muted);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:0 0 6px;border-bottom:1px solid var(--border);text-align:left;font-weight:500;}
+.info-tbl td{padding:6px 0;border-bottom:1px solid rgba(26,48,80,.3);}
+.info-tbl th:not(:first-child),.info-tbl td:not(:first-child){text-align:right;}
+.info-tbl tr.total-r td{font-weight:700;border-top:1px solid var(--border);}
+
+/* Total incoming summary */
+.inc-total-bar{display:flex;align-items:center;justify-content:center;gap:32px;padding:16px;background:rgba(0,201,255,.03);border:1px solid rgba(0,201,255,.1);border-radius:10px;margin-bottom:20px;}
+.itb-item{text-align:center;}
+.itb-num{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;line-height:1;}
+.itb-lbl{font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-top:3px;}
+.itb-div{width:1px;height:40px;background:var(--border);}
+
+/* Nat table in map */
+.nat-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.nat-tbl th{text-align:left;color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:0 8px 8px;border-bottom:1px solid var(--border);font-weight:500;}
+.nat-tbl td{padding:7px 8px;border-bottom:1px solid rgba(26,48,80,.3);}
+.nat-tbl th:not(:first-child),.nat-tbl td:not(:first-child){text-align:right;}
+.pct-bar{display:flex;align-items:center;gap:6px;}
+.pb-bg{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;min-width:40px;}
+.pb-fill{height:100%;border-radius:2px;}
+.tscroll{overflow-x:auto;}
+
+@media(max-width:1100px){.partition,.inc-partition,.map-sections{grid-template-columns:1fr;}.partition::after,.inc-partition::after{display:none;}.col.left,.col.right,.inc-col.left,.inc-col.right{padding:0;}}
+
+/* ── Admin report tabs — faithful layout ── */
+.adm-section{margin-bottom:26px;}
+.adm-h{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text);margin:0 0 3px;letter-spacing:.01em;}
+.adm-sub{font-size:11px;color:var(--muted);margin:0 0 14px;line-height:1.5;}
+.adm-tbl{width:100%;border-collapse:collapse;font-size:12px;background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:11px;overflow:hidden;}
+.adm-tbl th{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);text-align:left;padding:11px 14px;border-bottom:1px solid rgba(0,201,255,.14);background:rgba(0,201,255,.04);white-space:nowrap;}
+.adm-tbl th.num,.adm-tbl td.num{text-align:right;}
+.adm-tbl th.ctr,.adm-tbl td.ctr{text-align:center;}
+.adm-tbl td{padding:11px 14px;border-bottom:1px solid rgba(0,201,255,.06);color:var(--text);}
+.adm-tbl tr:last-child td{border-bottom:none;}
+.adm-tbl td.lab{font-weight:700;}
+.adm-tbl tr.tot td{font-weight:800;color:var(--accent);border-top:1px solid rgba(0,201,255,.2);background:rgba(0,201,255,.03);}
+.adm-ph{color:var(--muted);opacity:.45;}
+.sdot{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;box-shadow:0 0 6px currentColor;}
+.sdot.g{background:#39c46a;color:#39c46a;}
+.sdot.o{background:#ff9838;color:#ff9838;}
+.sdot.y{background:#ffcf47;color:#ffcf47;}
+.sdot.r{background:#e2465b;color:#e2465b;}
+.sdot-lab{display:inline-flex;align-items:center;gap:7px;}
+.adm-legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:12px;padding:12px 14px;background:rgba(0,201,255,.03);border:1px solid rgba(0,201,255,.08);border-radius:9px;}
+.adm-legend .li{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);}
+.adm-legend .lt{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);width:100%;margin-bottom:2px;}
+.adm-bars{display:flex;align-items:flex-end;justify-content:space-around;gap:10px;height:180px;padding:16px 10px 0;background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:11px;position:relative;}
+.adm-bar-col{display:flex;flex-direction:column;align-items:center;flex:1;height:100%;justify-content:flex-end;}
+.adm-bar{width:70%;max-width:52px;background:linear-gradient(180deg,var(--accent),rgba(0,201,255,.35));border-radius:4px 4px 0 0;min-height:2px;transition:height .3s;}
+.adm-bar-val{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;}
+.adm-bar-lab{font-size:10px;color:var(--muted);margin-top:8px;text-align:center;}
+.adm-yaxis{position:absolute;left:6px;top:10px;bottom:26px;display:flex;flex-direction:column;justify-content:space-between;font-size:8px;color:var(--muted);opacity:.6;}
+.adm-formula{margin-top:12px;font-size:11px;color:var(--muted);}
+.adm-formula code{background:rgba(0,201,255,.08);border:1px solid rgba(0,201,255,.16);border-radius:5px;padding:2px 8px;color:var(--accent);font-family:'DM Sans',monospace;}
+.adm-profile{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:16px;}
+.adm-profile .pcell{background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:10px;padding:14px 16px;}
+.adm-profile .pcell .pl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.adm-profile .pcell .pv{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--muted);opacity:.5;}
+.hl{background:rgba(0,201,255,.16);border-radius:3px;padding:1px 5px;color:var(--text);}
+
+/* ── Mode switcher (HR / Admin) ── */
+.mode-bar{display:flex;gap:10px;padding:14px 28px 0;background:var(--surface);}
+.mode-btn{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 26px;border:1px solid var(--border);background:transparent;cursor:pointer;border-radius:10px 10px 0 0;transition:all .2s;display:flex;align-items:center;gap:9px;}
+.mode-btn:hover{color:var(--text);border-color:rgba(0,201,255,.3);}
+.mode-btn.active{color:var(--bg);background:linear-gradient(135deg,var(--accent),#0090d0);border-color:var(--accent);box-shadow:0 4px 16px rgba(0,201,255,.25);}
+.mode-btn .mb-ico{font-size:15px;}
+.tab-group{display:none;}
+.tab-group.active{display:flex;}
+
+/* ── Creative admin tabs (icon-driven) ── */
+.adm2-hero{display:flex;align-items:center;gap:18px;background:linear-gradient(120deg,rgba(0,201,255,.1),rgba(227,107,255,.05));border:1px solid rgba(0,201,255,.18);border-radius:16px;padding:22px 26px;margin-bottom:24px;}
+.adm2-hero-ic{flex-shrink:0;width:60px;height:60px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:rgba(0,201,255,.1);border:1px solid rgba(0,201,255,.28);}
+.adm2-hero-ic svg{width:32px;height:32px;}
+.adm2-hero h2{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;color:var(--text);margin:0 0 3px;}
+.adm2-hero p{font-size:12px;color:var(--muted);margin:0;line-height:1.5;max-width:640px;}
+.adm2-hero .badge2{margin-left:auto;flex-shrink:0;font-family:'Syne',sans-serif;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--a4);background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.32);padding:7px 13px;border-radius:20px;}
+.adm2-sec-h{display:flex;align-items:center;gap:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;letter-spacing:.04em;color:var(--accent);text-transform:uppercase;margin:26px 0 14px;}
+.adm2-sec-h svg{width:18px;height:18px;}
+/* status-grid cards (utilities/bills) */
+.util-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
+.util-card{background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:14px;padding:18px;text-align:center;position:relative;overflow:hidden;transition:transform .2s;}
+.util-card:hover{transform:translateY(-2px);}
+.util-card .uc-ico{width:38px;height:38px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;}
+.util-card .uc-ico svg{width:34px;height:34px;}
+.util-card .uc-name{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.util-card .uc-status{display:inline-flex;align-items:center;gap:6px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;}
+.uc-status.paid{color:#39c46a;background:rgba(57,196,106,.12);}
+.uc-status.due{color:#ff9838;background:rgba(255,152,56,.12);}
+.uc-status.unpaid{color:#e2465b;background:rgba(226,70,91,.12);}
+.util-card .uc-corner{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 26px 26px 0;}
+.uc-corner.paid{border-color:transparent #39c46a transparent transparent;}
+.uc-corner.due{border-color:transparent #ff9838 transparent transparent;}
+.uc-corner.unpaid{border-color:transparent #e2465b transparent transparent;}
+/* office-row: office name + per-utility icons */
+.off-block{background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:14px;padding:6px 4px;}
+.off-row{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid rgba(0,201,255,.06);}
+.off-row:last-child{border-bottom:none;}
+.off-name{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--text);width:64px;flex-shrink:0;}
+.off-utils{display:flex;gap:10px;flex-wrap:wrap;flex:1;}
+.util-chip{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:58px;}
+.util-chip . chip-ic,.util-chip .chip-ic{width:26px;height:26px;position:relative;}
+.util-chip .chip-ic svg{width:26px;height:26px;}
+.util-chip .chip-dot{position:absolute;bottom:-2px;right:-4px;width:11px;height:11px;border-radius:50%;border:2px solid var(--surface);}
+.chip-dot.g{background:#39c46a;}.chip-dot.o{background:#ff9838;}.chip-dot.r{background:#e2465b;}.chip-dot.y{background:#ffcf47;}
+.util-chip .chip-lab{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+.off-overall{margin-left:auto;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.off-overall .oo-dot{width:18px;height:18px;border-radius:50%;box-shadow:0 0 10px currentColor;}
+.oo-dot.g{background:#39c46a;color:#39c46a;}.oo-dot.o{background:#ff9838;color:#ff9838;}.oo-dot.r{background:#e2465b;color:#e2465b;}
+.off-overall .oo-lab{font-size:8px;color:var(--muted);text-transform:uppercase;}
+/* contract cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
+.ct-card{background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:14px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start;position:relative;}
+.ct-card .ct-ico{flex-shrink:0;width:40px;height:40px;border-radius:10px;background:rgba(0,201,255,.08);display:flex;align-items:center;justify-content:center;}
+.ct-card .ct-ico svg{width:22px;height:22px;}
+.ct-card .ct-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text);margin-bottom:2px;}
+.ct-card .ct-sub{font-size:10px;color:var(--muted);margin-bottom:8px;}
+.ct-card .ct-days{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;line-height:1;}
+.ct-card .ct-days small{font-size:9px;font-weight:500;color:var(--muted);display:block;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+.ct-pill{position:absolute;top:14px;right:14px;width:12px;height:12px;border-radius:50%;box-shadow:0 0 8px currentColor;}
+.ct-pill.g{background:#39c46a;color:#39c46a;}.ct-pill.o{background:#ff9838;color:#ff9838;}.ct-pill.y{background:#ffcf47;color:#ffcf47;}.ct-pill.r{background:#e2465b;color:#e2465b;}
+/* stat tiles */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-bottom:6px;}
+.stat-tile{background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:14px;padding:16px;display:flex;align-items:center;gap:13px;}
+.stat-tile .st-ico{flex-shrink:0;width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:rgba(0,201,255,.08);}
+.stat-tile .st-ico svg{width:23px;height:23px;}
+.stat-tile .st-v{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--muted);opacity:.55;line-height:1;}
+.stat-tile .st-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:3px;}
+/* bar viz reuse */
+.cbar-wrap{display:flex;align-items:flex-end;justify-content:space-around;gap:12px;height:170px;padding:14px 12px 0;background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:14px;position:relative;}
+.cbar-col{display:flex;flex-direction:column;align-items:center;flex:1;height:100%;justify-content:flex-end;}
+.cbar-ic{width:22px;height:22px;margin-bottom:6px;opacity:.8;}
+.cbar-ic svg{width:22px;height:22px;}
+.cbar{width:64%;max-width:46px;background:linear-gradient(180deg,var(--accent),rgba(0,201,255,.3));border-radius:5px 5px 0 0;min-height:3px;}
+.cbar-v{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;}
+.cbar-l{font-size:9px;color:var(--muted);margin-top:8px;text-align:center;}
+.adm2-note{margin-top:12px;font-size:10px;color:var(--muted);font-style:italic;opacity:.7;}
+.veh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
+.veh-card{background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:14px;padding:16px 18px;position:relative;}
+.veh-hd{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.veh-ic{flex-shrink:0;width:44px;height:44px;border-radius:11px;background:rgba(0,201,255,.08);display:flex;align-items:center;justify-content:center;}
+.veh-ic svg{width:26px;height:26px;}
+.veh-name{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:var(--text);}
+.veh-plate{font-size:10px;color:var(--accent);letter-spacing:.08em;font-family:'DM Sans',monospace;background:rgba(0,201,255,.08);border:1px solid rgba(0,201,255,.16);border-radius:5px;padding:2px 7px;display:inline-block;margin-top:3px;}
+.veh-status{position:absolute;top:16px;right:16px;width:13px;height:13px;border-radius:50%;box-shadow:0 0 9px currentColor;}
+.vs.g{background:#39c46a;color:#39c46a;}.vs.o{background:#ff9838;color:#ff9838;}.vs.r{background:#e2465b;color:#e2465b;}
+.veh-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.veh-m{text-align:center;padding:8px 4px;background:rgba(0,201,255,.03);border-radius:8px;}
+.veh-m .vm-ic{width:16px;height:16px;margin:0 auto 4px;opacity:.7;}
+.veh-m .vm-ic svg{width:16px;height:16px;}
+.veh-m .vm-v{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--muted);opacity:.5;}
+.veh-m .vm-l{font-size:8px;color:var(--muted);text-transform:uppercase;}
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.res-card{background:var(--surface);border:1px solid rgba(0,201,255,.1);border-radius:14px;padding:16px 18px;}
+.res-hd{display:flex;align-items:center;gap:11px;margin-bottom:14px;}
+.res-ic{flex-shrink:0;width:40px;height:40px;border-radius:11px;background:rgba(57,255,152,.08);display:flex;align-items:center;justify-content:center;}
+.res-ic svg{width:23px;height:23px;}
+.res-name{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:var(--text);}
+.res-occ{font-size:10px;color:var(--muted);}
+.res-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.res-m{display:flex;align-items:center;gap:7px;padding:7px 9px;background:rgba(0,201,255,.03);border-radius:8px;}
+.res-m .rm-ic{width:15px;height:15px;flex-shrink:0;opacity:.7;}
+.res-m .rm-ic svg{width:15px;height:15px;}
+.res-m .rm-v{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);opacity:.5;}
+.res-m .rm-l{font-size:8px;color:var(--muted);text-transform:uppercase;}
+
+/* ── Admin tab GLOW & MOTION enhancements (20 Sep) ── */
+@keyframes admGlowPulse{0%,100%{box-shadow:0 0 0 1px rgba(0,201,255,.10),0 0 14px rgba(0,201,255,.04);}50%{box-shadow:0 0 0 1px rgba(0,201,255,.28),0 0 26px rgba(0,201,255,.16);}}
+@keyframes admShimmer{0%{transform:translateX(-120%);}100%{transform:translateX(220%);}}
+@keyframes admFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+@keyframes admDotPulse{0%,100%{box-shadow:0 0 4px currentColor,0 0 0 0 currentColor;opacity:1;}50%{box-shadow:0 0 12px currentColor,0 0 0 4px transparent;opacity:.85;}}
+@keyframes admIconSpin{0%{transform:rotate(0);}100%{transform:rotate(360deg);}}
+@keyframes admBarRise{0%{transform:scaleY(0);}100%{transform:scaleY(1);}}
+@keyframes admHeroShine{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+
+/* animated shimmer sweep across every admin card */
+.util-card,.ct-card,.veh-card,.res-card,.stat-tile,.off-block{position:relative;overflow:hidden;}
+.util-card::before,.ct-card::before,.veh-card::before,.res-card::before,.stat-tile::before{
+  content:'';position:absolute;top:0;left:0;width:40%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.06),transparent);
+  transform:translateX(-120%);pointer-events:none;z-index:2;}
+.util-card:hover::before,.ct-card:hover::before,.veh-card:hover::before,.res-card:hover::before,.stat-tile:hover::before{animation:admShimmer 1.1s ease;}
+
+/* gentle continuous glow on all cards */
+.util-card,.ct-card,.veh-card,.res-card,.stat-tile{animation:admGlowPulse 4.5s ease-in-out infinite;}
+.ct-card:nth-child(2){animation-delay:.6s;}.ct-card:nth-child(3){animation-delay:1.2s;}.ct-card:nth-child(4){animation-delay:1.8s;}
+.veh-card:nth-child(2),.res-card:nth-child(2){animation-delay:.5s;}
+.veh-card:nth-child(3),.res-card:nth-child(3){animation-delay:1s;}
+.veh-card:nth-child(4),.res-card:nth-child(4){animation-delay:1.5s;}
+
+/* lift + intensify on hover */
+.util-card:hover,.ct-card:hover,.veh-card:hover,.res-card:hover,.stat-tile:hover{
+  transform:translateY(-4px) scale(1.015);
+  box-shadow:0 8px 28px rgba(0,201,255,.22),0 0 0 1px rgba(0,201,255,.35);
+  border-color:rgba(0,201,255,.4)!important;transition:transform .25s ease,box-shadow .25s ease;z-index:3;}
+
+/* status dots now pulse */
+.sdot,.oo-dot,.ct-pill,.veh-status,.chip-dot{animation:admDotPulse 2.4s ease-in-out infinite;}
+.oo-dot.o,.ct-pill.o,.vs.o{animation-delay:.4s;}
+.oo-dot.r,.ct-pill.r,.vs.r{animation-delay:.8s;}
+
+/* hero icon glows and softly floats; the sun/utility icon slowly spins */
+.adm2-hero-ic{animation:admFloat 4s ease-in-out infinite;box-shadow:0 0 18px rgba(0,201,255,.15);}
+.adm2-hero-ic:hover{box-shadow:0 0 28px rgba(0,201,255,.35);}
+.adm2-hero{background-size:200% 100%;animation:admHeroShine 8s linear infinite;}
+
+/* section-header icons pulse subtly */
+.adm2-sec-h svg{filter:drop-shadow(0 0 3px rgba(0,201,255,.4));}
+
+/* utility chip icons lift on card hover */
+.util-card:hover .uc-ico,.off-row:hover .chip-ic{transform:scale(1.12);transition:transform .2s;}
+.off-row{transition:background .2s;}
+.off-row:hover{background:rgba(0,201,255,.05);}
+
+/* occupancy / bar chart bars animate up + glow */
+.cbar,.adm-bar{transform-origin:bottom;animation:admBarRise 1s ease-out both;box-shadow:0 0 10px rgba(0,201,255,.25);}
+
+/* vehicle & residence icon tiles glow on hover */
+.veh-ic,.res-ic,.ct-ico,.st-ico,.uc-ico{transition:transform .25s ease,filter .25s ease;}
+.veh-card:hover .veh-ic,.res-card:hover .res-ic,.ct-card:hover .ct-ico,.stat-tile:hover .st-ico{filter:drop-shadow(0 0 8px rgba(0,201,255,.5));transform:scale(1.08);}
+
+/* badge gently pulses */
+.badge2,.admin-badge{animation:admGlowPulse 3.5s ease-in-out infinite;}
+
+/* ── Animated ambient background (14 Oct) ── */
+@keyframes bgAurora{0%{transform:translate(-6%,-4%) scale(1.05) rotate(0deg);}50%{transform:translate(5%,4%) scale(1.15) rotate(8deg);}100%{transform:translate(-6%,-4%) scale(1.05) rotate(0deg);}}
+@keyframes bgAurora2{0%{transform:translate(4%,3%) scale(1.1) rotate(0deg);}50%{transform:translate(-5%,-5%) scale(1.2) rotate(-10deg);}100%{transform:translate(4%,3%) scale(1.1) rotate(0deg);}}
+@keyframes bgFloat{0%{transform:translateY(0) translateX(0);opacity:.5;}50%{transform:translateY(-40px) translateX(14px);opacity:.9;}100%{transform:translateY(0) translateX(0);opacity:.5;}}
+#bg-anim{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;background:var(--bg);}
+#bg-anim .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.30;mix-blend-mode:screen;}
+#bg-anim .b1{width:46vw;height:46vw;left:-8vw;top:-8vw;background:radial-gradient(circle,#0a6a9a,transparent 68%);animation:bgAurora 26s ease-in-out infinite;}
+#bg-anim .b2{width:42vw;height:42vw;right:-10vw;top:6vw;background:radial-gradient(circle,#7a2a8a,transparent 68%);animation:bgAurora2 32s ease-in-out infinite;}
+#bg-anim .b3{width:40vw;height:40vw;left:22vw;bottom:-14vw;background:radial-gradient(circle,#146a5a,transparent 68%);animation:bgAurora 30s ease-in-out infinite reverse;}
+#bg-anim .b4{width:30vw;height:30vw;right:14vw;bottom:-6vw;background:radial-gradient(circle,#1a4a9a,transparent 70%);animation:bgAurora2 24s ease-in-out infinite;}
+#bg-anim .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(60,120,180,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(60,120,180,.05) 1px,transparent 1px);background-size:46px 46px;mask-image:radial-gradient(ellipse at 50% 40%,#000,transparent 80%);-webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000,transparent 80%);}
+#bg-anim .spark{position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(120,190,255,.7);box-shadow:0 0 6px rgba(120,190,255,.6);animation:bgFloat 14s ease-in-out infinite;}
+@media (prefers-reduced-motion:reduce){#bg-anim .blob,#bg-anim .spark{animation:none;}}
+</style>
+</head>
+<body>
+<div id="bg-anim"><div class="grid"></div><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div><span class="spark" style="left:17%;top:84%;animation-duration:20s;animation-delay:8s;"></span><span class="spark" style="left:35%;top:40%;animation-duration:14s;animation-delay:4s;"></span><span class="spark" style="left:13%;top:90%;animation-duration:17s;animation-delay:4s;"></span><span class="spark" style="left:63%;top:56%;animation-duration:16s;animation-delay:12s;"></span><span class="spark" style="left:19%;top:39%;animation-duration:13s;animation-delay:5s;"></span><span class="spark" style="left:49%;top:39%;animation-duration:15s;animation-delay:12s;"></span><span class="spark" style="left:84%;top:86%;animation-duration:18s;animation-delay:2s;"></span><span class="spark" style="left:24%;top:76%;animation-duration:20s;animation-delay:10s;"></span><span class="spark" style="left:39%;top:27%;animation-duration:10s;animation-delay:10s;"></span><span class="spark" style="left:12%;top:21%;animation-duration:19s;animation-delay:5s;"></span><span class="spark" style="left:7%;top:16%;animation-duration:14s;animation-delay:3s;"></span><span class="spark" style="left:52%;top:57%;animation-duration:19s;animation-delay:7s;"></span><span class="spark" style="left:81%;top:18%;animation-duration:20s;animation-delay:10s;"></span><span class="spark" style="left:18%;top:80%;animation-duration:19s;animation-delay:10s;"></span></div>
+
+<div class="header">
+  <div style="display:flex;align-items:center;">
+    <div>
+      <div class="htitle">HR Dashboard</div>
+      <div class="hsub">Sri Lanka (MR · PCBPO) &amp; Manila, Philippines</div>
+    </div>
+  </div>
+  <div class="hdate">Data as of 14th October 2026</div>
+</div>
+
+<!-- ══════════════════ TOP FEATURE: THIS DAY IN HISTORY ══════════════════ -->
+<div class="moon-strip">
+  <div class="moon-strip-label">🍰 On This Day · 14 October</div>
+  <div class="moon-strip-text" id="moon-feature-text"><strong>🍰 14 October — National Dessert Day.</strong> Celebrated each year on 14 October, National Dessert Day is quite literally a day dedicated to indulging your sweet tooth — with cakes, cookies, ice cream, pastries and every sugary delight in between. From a childhood favourite to an elaborate patisserie creation, desserts bring a little joy and sweetness to the everyday. The day is a cheerful invitation to treat yourself, share something sweet with others, and savour one of life's simplest pleasures.</div>
+  <div class="moon-stage">
+<svg class="moon-svg" viewBox="0 0 176 176" xmlns="http://www.w3.org/2000/svg" aria-label="National Dessert Day">
+  <defs>
+    <radialGradient id="dsBg" cx="50%" cy="30%" r="82%"><stop offset="0%" stop-color="#ffeef5"/><stop offset="50%" stop-color="#f6c6dc"/><stop offset="100%" stop-color="#7a4a66"/></radialGradient>
+    <linearGradient id="dsCake" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff3e0"/><stop offset="100%" stop-color="#e8c49a"/></linearGradient>
+    <linearGradient id="dsFrost" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff9ec8"/><stop offset="100%" stop-color="#e86aa0"/></linearGradient>
+    <linearGradient id="dsPlate" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8eef5"/><stop offset="100%" stop-color="#b8c4d0"/></linearGradient>
+    <filter id="dsB" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.4"/></filter>
+  </defs>
+  <circle cx="88" cy="80" r="80" fill="url(#dsBg)"/>
+  <!-- soft glow -->
+  <circle cx="88" cy="72" r="42" fill="#fff4f8" opacity=".4" filter="url(#dsB)"><animate attributeName="opacity" values=".3;.5;.3" dur="5s" repeatCount="indefinite"/></circle>
+  <!-- sparkles -->
+  <g fill="#fff6d8">
+    <path d="M40 46 l1.3 3.4 l3.4 1.3 l-3.4 1.3 l-1.3 3.4 l-1.3 -3.4 l-3.4 -1.3 l3.4 -1.3 Z"><animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/></path>
+    <path d="M138 56 l1 2.6 l2.6 1 l-2.6 1 l-1 2.6 l-1 -2.6 l-2.6 -1 l2.6 -1 Z"><animate attributeName="opacity" values="1;0;1" dur="3.6s" repeatCount="indefinite"/></path>
+  </g>
+  <!-- plate -->
+  <ellipse cx="88" cy="136" rx="52" ry="10" fill="url(#dsPlate)"/>
+  <ellipse cx="88" cy="134" rx="44" ry="7" fill="#f4f8fc" opacity=".7"/>
+  <!-- cake layers -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0 0;0 -2;0 0" dur="4s" repeatCount="indefinite"/>
+    <!-- bottom sponge -->
+    <rect x="56" y="104" width="64" height="26" rx="4" fill="url(#dsCake)"/>
+    <!-- cream filling -->
+    <rect x="56" y="100" width="64" height="7" rx="3" fill="#fff6ea"/>
+    <!-- top sponge -->
+    <rect x="60" y="80" width="56" height="24" rx="4" fill="url(#dsCake)"/>
+    <!-- frosting drip -->
+    <path d="M60 82 Q60 76 66 76 L110 76 Q116 76 116 82 Q116 92 110 90 Q104 98 98 90 Q92 98 86 90 Q80 98 74 90 Q68 98 62 90 Q60 88 60 82Z" fill="url(#dsFrost)"/>
+    <!-- sprinkles -->
+    <g><rect x="70" y="84" width="4" height="1.6" rx=".8" fill="#5ac8fa" transform="rotate(30 70 84)"/><rect x="82" y="88" width="4" height="1.6" rx=".8" fill="#ffd36b" transform="rotate(-20 82 88)"/><rect x="94" y="84" width="4" height="1.6" rx=".8" fill="#39ff98" transform="rotate(40 94 84)"/><rect x="104" y="88" width="4" height="1.6" rx=".8" fill="#ff6aa8" transform="rotate(-30 104 88)"/></g>
+    <!-- cherry on top -->
+    <circle cx="88" cy="68" r="6" fill="#e8405a"/>
+    <path d="M88 62 Q91 56 96 56" stroke="#5a8a3a" stroke-width="1.5" fill="none"/>
+    <ellipse cx="86" cy="66" rx="2" ry="1.2" fill="#fff" opacity=".5"/>
+    <!-- candle flame -->
+    <rect x="87" y="52" width="2" height="8" fill="#8ac8f0"/>
+    <path d="M88 48 Q85 52 88 54 Q91 52 88 48Z" fill="#ffb84a"><animate attributeName="d" values="M88 48 Q85 52 88 54 Q91 52 88 48Z;M88 47 Q86 52 88 54 Q90 52 88 47Z;M88 48 Q85 52 88 54 Q91 52 88 48Z" dur="1.2s" repeatCount="indefinite"/></path>
+  </g>
+  <!-- little ice-cream cone to the side -->
+  <g>
+    <path d="M30 110 L36 124 L42 110Z" fill="#e8c49a"/>
+    <circle cx="36" cy="106" r="7" fill="#fff0f5"/><circle cx="33" cy="104" r="4" fill="#ffd9e6"/><circle cx="39" cy="104" r="4" fill="#c8f0d8"/>
+  </g>
+</svg>
+  </div>
+  <div class="news-corner">
+    <div class="news-corner-hdr">
+      <span class="news-live">Live</span>
+      <span class="news-ttl">📰 News Corner</span>
+    </div>
+    <div class="news-viewport">
+      <div class="news-track">
+          <div class="news-item"><span class="news-tag sl">Sri Lanka</span><span class="news-txt">⚖️ A Colombo court extends the custody of Shiranthi Rajapaksa over alleged charity misuse of donations meant for a children's hospital; son Namal Rajapaksa remains held on bribery charges.</span></div>
+          <div class="news-item"><span class="news-tag sl">Sri Lanka</span><span class="news-txt">🐘 Reuters highlights the escalating human-elephant conflict as forest cover (down to ~34% from ~70% in the 1920s) pushes many of the ~7,451 wild elephants toward villages and farms.</span></div>
+          <div class="news-item"><span class="news-tag sl">Sri Lanka</span><span class="news-txt">📚 The Ministry of Education releases Grade 3-I(a) Teachers' Service exam results, with interviews from 15 Nov; PM Amarasuriya says H1-2026 exports topped US$9 billion.</span></div>
+          <div class="news-item"><span class="news-tag sl">Sri Lanka</span><span class="news-txt">🦌 A joint operation in Thabbowa removes deadly illegal wildlife traps; SriLankan Airlines wins the SATA 2026 Visitors' Choice Award.</span></div>
+          <div class="news-item"><span class="news-tag gl">Global</span><span class="news-txt">🏫 At least 32–34 children and a teacher die as a school roof collapses in Peshawar, Pakistan; the owner and head teacher are arrested.</span></div>
+          <div class="news-item"><span class="news-tag gl">Global</span><span class="news-txt">🚢 Tensions stay high around the Strait of Hormuz as the US and Israel respond to shipping and security threats involving Iran and the Houthis.</span></div>
+          <div class="news-item"><span class="news-tag gl">Global</span><span class="news-txt">🇺🇦 Russian strikes continue on energy infrastructure across Kyiv and Kharkiv, leaving hundreds of thousands without power or water.</span></div>
+          <div class="news-item"><span class="news-tag gl">Global</span><span class="news-txt">🎓 Nationwide student protests over school conditions continue in France, with unrest spreading to parts of Albania and Europe.</span></div>
+          <div class="news-item"><span class="news-tag sl">Sri Lanka</span><span class="news-txt">⚖️ A Colombo court extends the custody of Shiranthi Rajapaksa over alleged charity misuse of donations meant for a children's hospital; son Namal Rajapaksa remains held on bribery charges.</span></div>
+          <div class="news-item"><span class="news-tag sl">Sri Lanka</span><span class="news-txt">🐘 Reuters highlights the escalating human-elephant conflict as forest cover (down to ~34% from ~70% in the 1920s) pushes many of the ~7,451 wild elephants toward villages and farms.</span></div>
+          <div class="news-item"><span class="news-tag sl">Sri Lanka</span><span class="news-txt">📚 The Ministry of Education releases Grade 3-I(a) Teachers' Service exam results, with interviews from 15 Nov; PM Amarasuriya says H1-2026 exports topped US$9 billion.</span></div>
+          <div class="news-item"><span class="news-tag sl">Sri Lanka</span><span class="news-txt">🦌 A joint operation in Thabbowa removes deadly illegal wildlife traps; SriLankan Airlines wins the SATA 2026 Visitors' Choice Award.</span></div>
+          <div class="news-item"><span class="news-tag gl">Global</span><span class="news-txt">🏫 At least 32–34 children and a teacher die as a school roof collapses in Peshawar, Pakistan; the owner and head teacher are arrested.</span></div>
+          <div class="news-item"><span class="news-tag gl">Global</span><span class="news-txt">🚢 Tensions stay high around the Strait of Hormuz as the US and Israel respond to shipping and security threats involving Iran and the Houthis.</span></div>
+          <div class="news-item"><span class="news-tag gl">Global</span><span class="news-txt">🇺🇦 Russian strikes continue on energy infrastructure across Kyiv and Kharkiv, leaving hundreds of thousands without power or water.</span></div>
+          <div class="news-item"><span class="news-tag gl">Global</span><span class="news-txt">🎓 Nationwide student protests over school conditions continue in France, with unrest spreading to parts of Albania and Europe.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('overview',this)">📊 Overview</button>
+  <button class="tab-btn" onclick="switchTab('worldmap',this)">🌏 World Map</button>
+  <button class="tab-btn" onclick="switchTab('incoming',this)">✈️ Incoming Employees</button>
+  <button class="tab-btn" onclick="switchTab('recruitment',this)">🧑‍💼 Recruitment</button>
+  <button class="tab-btn" onclick="switchTab('workforce',this)">📈 Workforce</button>
+</div>
+<div id="tab-overview" class="tab-panel active">
+<div class="ov-main">
+
+  <!-- Total HC Banner -->
+  <div class="total-banner">
+    <div class="total-card">
+      <div class="total-num">521</div>
+      <div class="total-lbl">Overall Total Headcount — All Locations</div>
+    </div>
+  </div>
+
+  <!-- Two-column grid — each section is a shared row so SL & Manila align -->
+  <div style="display:grid;grid-template-columns:1.9fr 1.1fr;gap:0;position:relative;margin-top:18px;">
+
+    <!-- Glowing divider -->
+    <div style="position:absolute;top:0;bottom:0;left:63.2%;width:3px;background:linear-gradient(180deg,rgba(255,179,71,.9) 0%,rgba(255,179,71,.4) 60%,rgba(26,48,80,.2) 100%);box-shadow:0 0 14px rgba(255,179,71,.3);border-radius:2px;pointer-events:none;z-index:1;"></div>
+
+    <!-- ── ROW 0: Region headers ── -->
+    <div style="padding:18px 32px 0 0;">
+      <div class="region-hdr sl">
+        <div class="region-skyline sl"></div>
+        <div class="region-title" style="position:relative;z-index:1;"><span class="wflag"><img src="https://flagcdn.com/lk.svg" alt="Sri Lanka"></span>Sri Lanka Operations — MR &amp; PCBPO</div>
+        <div class="region-badge" style="color:var(--mr);position:relative;z-index:1;">378</div>
+      </div>
+    </div>
+    <div style="padding:18px 0 0 28px;">
+      <div class="region-hdr mnl">
+        <div class="region-skyline mnl"></div>
+        <div class="region-title" style="position:relative;z-index:1;"><span class="wflag"><img src="https://flagcdn.com/ph.svg" alt="Philippines"></span>Manila Operations</div>
+        <div class="region-badge" style="color:var(--mnl);position:relative;z-index:1;">143</div>
+      </div>
+    </div>
+
+    <!-- ── ROW 1: Headcount Overview ── -->
+    <div style="padding:22px 32px 0 0;">
+      <div class="slabel">01 · Headcount Overview</div>
+      <div class="g2">
+        <div class="bc" style="border-top:3px solid var(--mr);">
+          <div class="bc-name" style="color:var(--mr);">MR Branch — Masterock</div>
+          <div class="bc-num" style="color:var(--mr);">212</div>
+          <div class="mrow"><span>Expats</span><span>196</span></div>
+          <div class="mrow"><span>Locals</span><span>16</span></div>
+          <div class="mrow"><span>♂ Male</span><span>103</span></div>
+          <div class="mrow"><span>♀ Female</span><span>109</span></div>
+          <div class="mrow"><span>Regular</span><span>191</span></div>
+          <div class="mrow"><span>Probationary</span><span>21</span></div>
+        </div>
+        <div class="bc" style="border-top:3px solid var(--pc);">
+          <div class="bc-name" style="color:var(--pc);">PCBPO Branch — Port City BPO</div>
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px;">
+            <div class="bc-num" style="color:var(--pc);margin-bottom:0;">166</div>
+          </div>
+          <div class="mrow"><span>Expats</span><span>146</span></div>
+          <div class="mrow"><span>Locals</span><span>20</span></div>
+          <div class="mrow"><span>♂ Male</span><span>63</span></div>
+          <div class="mrow"><span>♀ Female</span><span>103</span></div>
+          <div class="mrow"><span>Regular</span><span>154</span></div>
+          <div class="mrow"><span>Probationary</span><span>12</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:22px 0 0 28px;">
+      <div class="slabel">01 · Headcount Overview</div>
+      <div class="g1">
+        <div class="bc" style="border-top:3px solid var(--mnl);">
+          <div class="bc-name" style="color:var(--mnl);">Manila Office — Philippines</div>
+          <div class="bc-num" style="color:var(--mnl);">143</div>
+          <div class="mrow"><span>Expats</span><span>8</span></div>
+          <div class="mrow"><span>Locals</span><span>135</span></div>
+          <div class="mrow"><span>♂ Male</span><span>64</span></div>
+          <div class="mrow"><span>♀ Female</span><span>79</span></div>
+          <div class="mrow"><span>Regular</span><span>131</span></div>
+          <div class="mrow"><span>Probationary</span><span>12</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROW 2: Attendance & Absenteeism ── -->
+    <div style="padding:22px 32px 0 0;">
+      <div class="slabel">02 · Attendance &amp; Absenteeism — As of 14 Oct 2026</div>
+      <div class="g1">
+        <div class="cc">
+          <div class="cc-title">Sri Lanka Combined (MR + PCBPO)</div>
+          <div class="cc-sub">Basis: 378 employees · as of 14 Oct 2026</div>
+          <table class="att">
+            <thead><tr><th>Metric</th><th>Count</th><th>Rate</th></tr></thead>
+            <tbody>
+              <tr><td>Paid Leaves</td><td>13</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:87%;background:var(--mr);"></div></div>3.44%</div></td></tr>
+              <tr><td>Absenteeism</td><td>0</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:0%;background:var(--a2);"></div></div>0.00%</div></td></tr>
+              <tr><td>Tardiness</td><td>15</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:100%;background:var(--a4);"></div></div>3.97%</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div style="padding:22px 0 0 28px;">
+      <div class="slabel">02 · Attendance &amp; Absenteeism — As of 14 Oct 2026</div>
+      <div class="g1">
+        <div class="cc">
+          <div class="cc-title">Manila Metrics</div>
+          <div class="cc-sub">Basis: 143 employees · as of 14 Oct 2026</div>
+          <table class="att">
+            <thead><tr><th>Metric</th><th>Count</th><th>Rate</th></tr></thead>
+            <tbody>
+              <tr><td>Paid Leaves</td><td>3</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:43%;background:var(--mnl);"></div></div>2.10%</div></td></tr>
+              <tr><td>Absenteeism</td><td>3</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:43%;background:var(--a2);"></div></div>2.10%</div></td></tr>
+              <tr><td>Tardiness</td><td>7</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:100%;background:var(--a4);"></div></div>4.90%</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROW 3: Visa & Passport Expiry ── -->
+    <div style="padding:22px 32px 0 0;">
+      <div class="slabel">03 · Visa &amp; Passport Expiry — October 2026 Only</div>
+      <div class="g2">
+        <div class="cc">
+          <div class="cc-title" style="color:var(--mr);">MR Branch</div>
+          <div class="cc-sub">October 2026 expiries — year 2026</div>
+          <table class="att">
+            <thead><tr><th>Document</th><th>Count</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Visa Expiring</td><td>1</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:100%;background:var(--mr);"></div></div>—</div></td></tr>
+              <tr><td>Passport Expiring</td><td>0</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:0%;background:var(--a4);"></div></div>—</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="cc">
+          <div class="cc-title" style="color:var(--pc);">PCBPO Branch</div>
+          <div class="cc-sub">October 2026 expiries — year 2026</div>
+          <table class="att">
+            <thead><tr><th>Document</th><th>Count</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Visa Expiring</td><td>7</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:100%;background:var(--pc);"></div></div>—</div></td></tr>
+              <tr><td>Passport Expiring</td><td>0</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:0%;background:var(--a4);"></div></div>—</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div style="padding:22px 0 0 28px;">
+      <div class="slabel">03 · Visa &amp; Passport Expiry — October 2026</div>
+      <div class="g1">
+        <div class="cc">
+          <div class="cc-title" style="color:var(--mnl);">Manila Office</div>
+          <div class="cc-sub">October 2026 expiries</div>
+          <table class="att">
+            <thead><tr><th>Document</th><th>Count</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Visa Expiring</td><td>0</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:0%;background:var(--mnl);"></div></div>—</div></td></tr>
+              <tr><td>Passport Expiring</td><td>0</td><td><div class="rbar"><div class="rb"><div class="rf" style="width:0%;background:var(--mnl);"></div></div>—</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROW 4: B-Card/TIN ↔ Govt Contributions ── -->
+    <div style="padding:22px 32px 28px 0;">
+      <div class="slabel">04 · B-Card &amp; TIN Compliance</div>
+      <div class="g2">
+        <div class="cc">
+          <div class="cc-title" style="color:var(--mr);margin-bottom:14px;">MR Branch</div>
+          <div class="cp-item"><div class="cp-hdr"><span>B-Card</span><span class="cp-pct" style="color:var(--mr);">89.8%</span></div><div class="cp-bg"><div class="cp-fill" style="width:89.8%;background:linear-gradient(90deg,var(--mr),rgba(0,201,255,.3));"></div></div><div class="cp-note">Done: 184 · Pending: 21 · Total: 205</div></div>
+          <div class="cp-item"><div class="cp-hdr"><span>TIN No.</span><span class="cp-pct" style="color:var(--a4);">33.7%</span></div><div class="cp-bg"><div class="cp-fill" style="width:33.7%;background:linear-gradient(90deg,var(--a4),rgba(255,179,71,.3));"></div></div><div class="cp-note">Done: 69 · Pending: 136 · Total: 205</div></div>
+        </div>
+        <div class="cc">
+          <div class="cc-title" style="color:var(--pc);margin-bottom:14px;">PCBPO Branch</div>
+          <div class="cp-item"><div class="cp-hdr"><span>B-Card</span><span class="cp-pct" style="color:var(--pc);">53.6%</span></div><div class="cp-bg"><div class="cp-fill" style="width:53.6%;background:linear-gradient(90deg,var(--pc),rgba(227,107,255,.3));"></div></div><div class="cp-note">Done: 89 · Pending: 77 · Total: 166</div></div>
+          <div class="cp-item"><div class="cp-hdr"><span>TIN No.</span><span class="cp-pct" style="color:var(--a4);">17.5%</span></div><div class="cp-bg"><div class="cp-fill" style="width:17.5%;background:linear-gradient(90deg,var(--a4),rgba(255,179,71,.3));"></div></div><div class="cp-note">Done: 29 · Pending: 137 · Total: 166</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:22px 0 28px 28px;">
+      <div class="slabel">04 · Government Contributions</div>
+      <div class="cc">
+        <div class="cp-item"><div class="cp-hdr"><span>SSS</span><span class="cp-pct" style="color:var(--mnl);">100%</span></div><div class="cp-bg"><div class="cp-fill" style="width:100%;background:var(--mnl);"></div></div><div class="cp-note">143/143 ✅</div></div>
+        <div class="cp-item"><div class="cp-hdr"><span>PhilHealth</span><span class="cp-pct" style="color:var(--mnl);">100%</span></div><div class="cp-bg"><div class="cp-fill" style="width:100%;background:var(--mnl);"></div></div><div class="cp-note">143/143 ✅</div></div>
+        <div class="cp-item"><div class="cp-hdr"><span>Pag-IBIG</span><span class="cp-pct" style="color:var(--mnl);">100%</span></div><div class="cp-bg"><div class="cp-fill" style="width:100%;background:var(--mnl);"></div></div><div class="cp-note">143/143 ✅</div></div>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+</div>
+</div><!-- /overview -->
+
+<!-- ══════════════════ WORLD MAP ══════════════════ -->
+<div id="tab-worldmap" class="tab-panel">
+<div class="map-main">
+  <div class="slabel">Workforce Nationality — Interactive Globe</div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">Drag to rotate · click a dot to view nationality details · 521 employees across Sri Lanka &amp; Manila</p>
+
+  <div class="globe-wrap">
+    <canvas id="globe-canvas"></canvas>
+    <div class="globe-overlay">
+      <div class="globe-hint">🖱 Drag to rotate · Click nationality dot for details</div>
+      <div class="map-legend">
+        <div class="ml-item"><div class="ml-dot" style="background:var(--mr);"></div>MR Only</div>
+        <div class="ml-item"><div class="ml-dot" style="background:var(--pc);"></div>PCBPO Only</div>
+        <div class="ml-item"><div class="ml-dot" style="background:var(--mnl);"></div>Both SL</div>
+        <div class="ml-item"><div class="ml-dot" style="background:var(--a4);"></div>Manila</div>
+      </div>
+      <div id="country-panel" class="country-panel">
+        <button class="cp-close" onclick="document.getElementById('country-panel').classList.remove('show')">✕</button>
+        <div class="cp-country" id="cp-name">—</div>
+        <div id="cp-stats"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nat + Dept tables: SL left, Manila right — grid rows for alignment -->
+  <div style="display:grid;grid-template-columns:1.9fr 1.1fr;gap:0;margin-top:22px;position:relative;">
+
+    <!-- Vertical divider -->
+    <div style="position:absolute;top:0;bottom:0;left:63.2%;width:2px;background:linear-gradient(180deg,rgba(255,179,71,.7),rgba(26,48,80,.3));border-radius:2px;pointer-events:none;z-index:1;"></div>
+
+    <!-- ── ROW 0: Region headers ── -->
+    <div style="padding:0 20px 0 0;">
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:linear-gradient(90deg,rgba(0,201,255,.1),rgba(0,201,255,.02));border-left:4px solid var(--mr);border-radius:8px;">
+        <span style="font-size:48px;display:inline-block;animation:flagWave 2.5s ease-in-out infinite;transform-origin:bottom center;"><img src="https://flagcdn.com/lk.svg" alt="SL" style="width:48px;height:auto;border-radius:3px;"></span>
+        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.05em;">Sri Lanka — MR &amp; PCBPO</span>
+        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--mr);margin-left:auto;">378</span>
+      </div>
+    </div>
+    <div style="padding:0 0 0 20px;">
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:linear-gradient(90deg,rgba(57,255,152,.1),rgba(57,255,152,.02));border-left:4px solid var(--mnl);border-radius:8px;">
+        <span style="font-size:48px;display:inline-block;animation:flagWave 2.5s ease-in-out infinite;transform-origin:bottom center;"><img src="https://flagcdn.com/ph.svg" alt="PH" style="width:48px;height:auto;border-radius:3px;"></span>
+        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.05em;">Manila, Philippines</span>
+        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--mnl);margin-left:auto;">143</span>
+      </div>
+    </div>
+
+    <!-- ── ROW 1: Nationality Breakdown ── -->
+    <div style="padding:18px 20px 0 0;">
+      <div class="cc">
+        <div class="slabel" style="margin-bottom:10px;">Nationality Breakdown — Sri Lanka (378)</div>
+        <div class="tscroll">
+          <table class="nat-tbl">
+            <thead><tr><th>Nationality</th><th style="color:var(--mr);">MR</th><th style="color:var(--pc);">PCBPO</th><th>Total</th><th>% SL</th></tr></thead>
+            <tbody id="nat-tbl-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div style="padding:18px 0 0 20px;">
+      <div class="cc">
+        <div class="slabel" style="margin-bottom:10px;">Nationality Breakdown — Manila (144)</div>
+        <div class="tscroll">
+          <table class="nat-tbl">
+            <thead><tr><th>Nationality</th><th style="color:var(--mnl);">Manila</th><th>Total</th><th>% Manila</th></tr></thead>
+            <tbody id="nat-mnl-tbl-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROW 2: Department Breakdown ── -->
+    <div style="padding:18px 20px 0 0;">
+      <div class="cc">
+        <div class="slabel" style="margin-bottom:10px;">Department Breakdown — Sri Lanka (378)</div>
+        <div class="tscroll">
+          <table class="nat-tbl">
+            <thead><tr><th>Department</th><th style="color:var(--mr);">MR</th><th style="color:var(--pc);">PCBPO</th><th>Total</th><th>% SL</th></tr></thead>
+            <tbody id="dept-tbl-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div style="padding:18px 0 0 20px;">
+      <div class="cc">
+        <div class="slabel" style="margin-bottom:10px;">Department Breakdown — Manila (144)</div>
+        <div class="tscroll">
+          <table class="nat-tbl">
+            <thead><tr><th>Department</th><th style="color:var(--mnl);">Manila</th><th>Total</th><th>% Manila</th></tr></thead>
+            <tbody id="dept-mnl-tbl-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /worldmap -->
+
+<!-- ══════════════════ INCOMING EMPLOYEES ══════════════════ -->
+<div id="tab-incoming" class="tab-panel">
+<div class="inc-main">
+
+  <!-- Total summary bar — total only -->
+  <div class="inc-total-bar">
+    <div class="itb-item">
+      <div class="itb-num" style="color:var(--accent);">3</div>
+      <div class="itb-lbl">Total Incoming — 2026</div>
+    </div>
+  </div>
+
+  <!-- Two-column partition MR | PCBPO — grid layout for perfect row alignment -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;position:relative;">
+
+    <!-- Amber divider -->
+    <div style="position:absolute;top:0;bottom:0;left:50%;width:3px;transform:translateX(-50%);background:linear-gradient(180deg,rgba(255,179,71,.8),rgba(26,48,80,.3));border-radius:2px;pointer-events:none;z-index:1;"></div>
+
+    <!-- ── ROW 1: Headers ── -->
+    <div style="padding:0 26px 0 0;">
+      <div class="inc-hdr mr-hdr">
+        <div class="inc-hdr-title" style="color:var(--mr);">MR — Masterock</div>
+        <div class="inc-col-count" style="color:var(--mr);">2</div>
+      </div>
+    </div>
+    <div style="padding:0 0 0 26px;">
+      <div class="inc-hdr pc-hdr">
+        <div class="inc-hdr-title" style="color:var(--pc);">PCBPO — Port City BPO</div>
+        <div class="inc-col-count" style="color:var(--pc);">1</div>
+      </div>
+    </div>
+
+    <!-- ── ROW 2: Entry Type + Gender ── -->
+    <div style="padding:18px 26px 0 0;">
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-title">Entry Type</div>
+          <table class="info-tbl">
+            <thead><tr><th>Type</th><th>Count</th></tr></thead>
+            <tbody>
+              <tr><td>New Hire</td><td>2</td></tr>
+              <tr><td>Relocation</td><td>—</td></tr>
+              <tr class="total-r"><td>Total</td><td>2</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="info-card">
+          <div class="info-title">Gender</div>
+          <table class="info-tbl">
+            <thead><tr><th>Type</th><th>Count</th></tr></thead>
+            <tbody>
+              <tr><td>♀ Female</td><td>0</td></tr>
+              <tr><td>♂ Male</td><td>2</td></tr>
+              <tr class="total-r"><td>Total</td><td>2</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div style="padding:18px 0 0 26px;">
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-title">Entry Type</div>
+          <table class="info-tbl">
+            <thead><tr><th>Type</th><th>Count</th></tr></thead>
+            <tbody>
+              <tr><td>New Hire</td><td>1</td></tr>
+              <tr><td>Relocation</td><td>0</td></tr>
+              <tr class="total-r"><td>Total</td><td>1</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="info-card">
+          <div class="info-title">Gender</div>
+          <table class="info-tbl">
+            <thead><tr><th>Type</th><th>Count</th></tr></thead>
+            <tbody>
+              <tr><td>♀ Female</td><td>0</td></tr>
+              <tr><td>♂ Male</td><td>1</td></tr>
+              <tr class="total-r"><td>Total</td><td>1</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ROW 3: Nationality Breakdown ── -->
+    <div style="padding:18px 26px 0 0;">
+      <div class="info-card" style="height:100%;">
+        <div class="info-title">Nationality Breakdown</div>
+        <table class="info-tbl">
+          <thead><tr><th>Nationality</th><th>Count</th></tr></thead>
+          <tbody>
+            <tr><td>Vietnamese</td><td>1</td></tr>
+            <tr><td>Myanmar</td><td>1</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div style="padding:18px 0 0 26px;">
+      <div class="info-card" style="height:100%;">
+        <div class="info-title">Nationality Breakdown</div>
+        <table class="info-tbl">
+          <thead><tr><th>Nationality</th><th>Count</th></tr></thead>
+          <tbody>
+            <tr><td>Pakistan</td><td>1</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ROW 4: Submission Status label ── -->
+    <div style="padding:22px 26px 0 0;">
+      <div class="slabel">Landing Endorsement Submission Status</div>
+    </div>
+    <div style="padding:22px 0 0 26px;">
+      <div class="slabel">Landing Endorsement Submission Status</div>
+    </div>
+
+    <!-- ── ROW 5: Submission Status tables ── -->
+    <div style="padding:0 26px 28px 0;">
+      <div class="cc tscroll">
+        <table class="stbl">
+          <thead><tr><th>Status</th><th>Count</th><th>% of MR</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge b-ev2">With LE</span></td><td>1</td><td>50.0%</td></tr>
+            <tr><td><span class="badge b-ev">LE Approved</span></td><td>1</td><td>50.0%</td></tr>
+            <tr><td><span class="badge b-sub">Submitted</span></td><td>0</td><td>0.0%</td></tr>
+            <tr><td><span class="badge b-wait">Waiting for Docs</span></td><td>0</td><td>0.0%</td></tr>
+            <tr class="total-row"><td>TOTAL</td><td>2</td><td>100%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div style="padding:0 0 28px 26px;">
+      <div class="cc tscroll">
+        <table class="stbl">
+          <thead><tr><th>Status</th><th>Count</th><th>% of PCBPO</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge b-sub">Submitted</span></td><td>1</td><td>100.0%</td></tr>
+            <tr><td><span class="badge b-ev">LE Approved</span></td><td>0</td><td>0.0%</td></tr>
+            <tr><td><span class="badge b-ev2">With LE</span></td><td>0</td><td>0.0%</td></tr>
+            <tr><td><span class="badge b-wait">Waiting for Docs</span></td><td>0</td><td>0.0%</td></tr>
+            <tr class="total-row"><td>TOTAL</td><td>1</td><td>100%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+</div>
+</div><!-- /incoming -->
+
+<!-- ══════════════════ RECRUITMENT ══════════════════ -->
+<div id="tab-recruitment" class="tab-panel">
+<div class="inc-main">
+
+  <!-- TOTAL HIRING REQUEST -->
+  <div class="slabel">Total Hiring Request — Local and Expats</div>
+  <div class="g2" style="margin-bottom:24px;">
+    <div class="cc">
+      <div class="cc-title" style="color:var(--mr);">MR</div>
+      <div class="cc-sub">Open positions by type</div>
+      <table class="att">
+        <thead><tr><th>Type</th><th>Count</th></tr></thead>
+        <tbody>
+          <tr><td>Local</td><td>3</td></tr>
+          <tr><td>Expat</td><td>6</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cc">
+      <div class="cc-title" style="color:var(--pc);">PC</div>
+      <div class="cc-sub">Open positions by type</div>
+      <table class="att">
+        <thead><tr><th>Type</th><th>Count</th></tr></thead>
+        <tbody>
+          <tr><td>Local</td><td>2</td></tr>
+          <tr><td>Expat</td><td>1</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LOCAL: STATUS PIE CHART + REQUESTED VS COMPLETED -->
+  <div class="slabel">Local Hiring — Status &amp; Requested vs Completed — As of 14th October 2026</div>
+  <div class="g2" style="margin-bottom:24px;">
+    <div class="cc">
+      <div class="cc-title" style="color:var(--mr);">MR — Local</div>
+      <div class="cc-sub">Status pie chart</div>
+      <div style="position:relative;height:180px;margin-bottom:14px;"><canvas id="mrLocalPie"></canvas></div>
+      <table class="att">
+        <thead><tr><th>Requested vs Completed</th><th>Count</th></tr></thead>
+        <tbody>
+          <tr><td>Requested</td><td>3</td></tr>
+          <tr><td>Hired</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cc">
+      <div class="cc-title" style="color:var(--pc);">PC — Local</div>
+      <div class="cc-sub">Status pie chart</div>
+      <div style="position:relative;height:180px;margin-bottom:14px;"><canvas id="pcLocalPie"></canvas></div>
+      <table class="att">
+        <thead><tr><th>Requested vs Completed</th><th>Count</th></tr></thead>
+        <tbody>
+          <tr><td>Requested</td><td>3</td></tr>
+          <tr><td>Hired</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EXPAT: STATUS PIE CHART + REQUESTED VS COMPLETED -->
+  <div class="slabel">Expat Hiring — Status &amp; Requested vs Completed — As of 14th October 2026</div>
+  <div class="g2" style="margin-bottom:24px;">
+    <div class="cc">
+      <div class="cc-title" style="color:var(--mr);">MR — Expat</div>
+      <div class="cc-sub">Status pie chart</div>
+      <div style="position:relative;height:180px;margin-bottom:14px;"><canvas id="mrExpatPie"></canvas></div>
+      <table class="att">
+        <thead><tr><th>Requested vs Completed</th><th>Count</th></tr></thead>
+        <tbody>
+          <tr><td>Requested</td><td>6</td></tr>
+          <tr><td>Hired</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cc">
+      <div class="cc-title" style="color:var(--pc);">PC — Expat</div>
+      <div class="cc-sub">Status pie chart</div>
+      <div style="position:relative;height:180px;margin-bottom:14px;"><canvas id="pcExpatPie"></canvas></div>
+      <table class="att">
+        <thead><tr><th>Requested vs Completed</th><th>Count</th></tr></thead>
+        <tbody>
+          <tr><td>Requested</td><td>1</td></tr>
+          <tr><td>Hired</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RESUME ACQUISITION REPORT (July) -->
+  <div class="slabel">Resume Acquisition Report — as of 14th October 2026</div>
+  <div class="g2" style="margin-bottom:24px;">
+    <div class="cc">
+      <div class="cc-title" style="color:var(--mr);">MR</div>
+      <div class="cc-sub">Local &amp; Expat acquisition pipeline</div>
+      <table class="att">
+        <thead><tr><th>Stage</th><th>Local</th><th>Expat</th></tr></thead>
+        <tbody>
+          <tr><td>Acquisition</td><td>0</td><td>2</td></tr>
+          <tr><td>Shortlisted</td><td>0</td><td>2</td></tr>
+          <tr><td>Endorsed</td><td>0</td><td>2</td></tr>
+          <tr><td>Hired</td><td>0</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cc">
+      <div class="cc-title" style="color:var(--pc);">PC (PCBPO)</div>
+      <div class="cc-sub">Local &amp; Expat acquisition pipeline</div>
+      <table class="att">
+        <thead><tr><th>Stage</th><th>Local</th><th>Expat</th></tr></thead>
+        <tbody>
+          <tr><td>Acquisition</td><td>0</td><td>0</td></tr>
+          <tr><td>Shortlisted</td><td>0</td><td>0</td></tr>
+          <tr><td>Endorsed</td><td>0</td><td>0</td></tr>
+          <tr><td>Hired</td><td>0</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HIRING STATUS HISTORY 2026 -->
+  <div class="slabel">Hiring Status History — 2026</div>
+  <div class="cc" style="margin-bottom:24px;">
+    <div class="cc-title">Monthly Hires — Expats vs Locals</div>
+    <div class="cc-sub">Jan – Aug 2026</div>
+    <table class="att">
+      <thead><tr><th>Month</th><th style="color:var(--mr);">Expats (Hired)</th><th style="color:var(--mnl);">Locals (Hired)</th></tr></thead>
+      <tbody>
+        <tr><td>January</td><td>5</td><td>2</td></tr>
+        <tr><td>February</td><td>8</td><td>4</td></tr>
+        <tr><td>March</td><td>3</td><td>4</td></tr>
+        <tr><td>April</td><td>10</td><td>5</td></tr>
+        <tr><td>May</td><td>4</td><td>2</td></tr>
+        <tr><td>June</td><td>2</td><td>5</td></tr>
+        <tr><td>July</td><td>0</td><td>2</td></tr>
+        <tr><td>August</td><td>2</td><td>5</td></tr>
+        <tr><td>September</td><td>15</td><td>2</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PROBATIONARY TRACKER 2026 -->
+  <div class="slabel">Probationary Tracker — 2026</div>
+  <div class="cc">
+    <div class="cc-title">Employees Under Probation — Weekly View (October–December)</div>
+    <div class="cc-sub">2026 · Week counts per month</div>
+    <table class="att">
+      <thead>
+        <tr>
+          <th style="border-bottom:none;"></th>
+          <th style="border-bottom:none;"></th>
+          <th colspan="4" style="text-align:center;border-bottom:2px solid var(--accent);padding-bottom:6px;letter-spacing:.1em;color:var(--accent);">Weekly Breakdown</th>
+        </tr>
+        <tr>
+          <th>Month</th>
+          <th>Year</th>
+          <th>Week 01</th><th>Week 02</th><th>Week 03</th><th>Week 04</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>October</td><td>2026</td><td>13</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>November</td><td>2026</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+        <tr><td>December</td><td>2026</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</div><!-- /recruitment -->
+
+<!-- ══════════════════ WORKFORCE ══════════════════ -->
+<div id="tab-workforce" class="tab-panel">
+<div class="inc-main">
+
+  <!-- 01 Onboarding -->
+  <div class="slabel">01 · Onboarding — as of 14th October 2026</div>
+  <div class="g2" style="margin-bottom:24px;">
+    <div class="cc">
+      <div class="cc-title" style="color:var(--a3);">Total Onboarding</div>
+      <div class="cc-sub">as of 14th October 2026 · MR: 10 (MROCK Join Date) · PCBPO: 0 (PC Join Date)</div>
+      <div style="font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:var(--a3);margin:8px 0;">10</div>
+    </div>
+    <div class="cc">
+      <div class="cc-title">Weekly Onboarding — October</div>
+      <div class="cc-sub">as of 14th October 2026 · new joiners</div>
+      <div style="position:relative;height:140px;"><canvas id="onboardChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 02 Offboarding -->
+  <div class="slabel">02 · Offboarding — as of 14th October 2026</div>
+  <div class="g2" style="margin-bottom:24px;">
+    <div class="cc">
+      <div class="cc-title" style="color:#ff6464;">Total Offboarding</div>
+      <div class="cc-sub">as of 14th October 2026 · MR: 1 (MROCK Resignation Date) · PCBPO: 5 (PC Resignation Date)</div>
+      <div style="font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:#ff6464;margin:8px 0;">6</div>
+    </div>
+    <div class="cc">
+      <div class="cc-title">Weekly Offboarding — October</div>
+      <div class="cc-sub">as of 14th October 2026 · departures</div>
+      <div style="position:relative;height:140px;"><canvas id="offboardTrendChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 03 Attrition Rate -->
+  <div class="slabel">03 · Overall Attrition Rate — as of 14th October 2026</div>
+  <div class="g2" style="margin-bottom:24px;">
+    <div class="cc">
+      <div class="cc-title" style="color:var(--a4);">Overall Attrition Rate</div>
+      <div class="cc-sub">Offboarding (as of 14th October 2026) ÷ Current Active Headcount (378)</div>
+      <div style="font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:var(--a4);margin:8px 0;">1.59%</div>
+      <div style="font-size:11px;color:var(--muted);">6 offboarded ÷ 378 active = 1.59%</div>
+    </div>
+    <div class="cc">
+      <div class="cc-title">Weekly Attrition Rate — October</div>
+      <div class="cc-sub">as of 14th October 2026 · offboards ÷ headcount</div>
+      <div style="position:relative;height:140px;"><canvas id="attritionChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 04 Offboard Stats by Nationality -->
+  <div class="slabel">04 · Offboard Stats — as of 14th October 2026 (By Nationality)</div>
+  <div class="g2">
+    <div class="cc tscroll">
+      <div class="cc-title" style="color:var(--mr);">MR — Offboarding by Nationality</div>
+      <div class="cc-sub">as of 14th October 2026 · Total: 1</div>
+      <table class="nat-tbl">
+        <thead><tr><th>Nationality</th><th>Count</th><th>% of MR Offboard</th></tr></thead>
+        <tbody id="offboard-mr-tbl"></tbody>
+      </table>
+    </div>
+    <div class="cc tscroll">
+      <div class="cc-title" style="color:var(--pc);">PC — Offboarding by Nationality</div>
+      <div class="cc-sub">as of 14th October 2026 · Total: 5</div>
+      <table class="nat-tbl">
+        <thead><tr><th>Nationality</th><th>Count</th><th>% of PC Offboard</th></tr></thead>
+        <tbody id="offboard-pc-tbl"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</div><!-- /workforce -->
+<script>
+// ─── TAB SWITCHING ───
+function switchTab(id, btn){
+  document.querySelectorAll('.tab-panel').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(id==='worldmap'&&!globeReady){buildGlobe();globeReady=true;}
+}
+
+// ─── CHART.JS DEFAULTS ───
+Chart.defaults.color='#6b8aaa';
+Chart.defaults.font.family="'DM Sans',sans-serif";
+
+// ─── DEPARTMENT TABLES — Detailed from Employee Master Database (as of 14 Oct 2026) ───
+const deptData=[
+  {name:'Payment W88', MR:0, PC:61},
+  {name:'General Affairs', MR:15, PC:11},
+  {name:'Surveillance', MR:21, PC:0},
+  {name:'Customer Service Vietnam', MR:19, PC:0},
+  {name:'Customer Service Thailand', MR:8, PC:5},
+  {name:'Customer Service VIP Thailand', MR:13, PC:0},
+  {name:'Customer Service VIP Vietnam W88', MR:10, PC:4},
+  {name:'Customer Service Indonesia', MR:9, PC:3},
+  {name:'Customer Service Thailand (Alpha88)', MR:6, PC:5},
+  {name:'Finance - Treasury (THB)', MR:0, PC:12},
+  {name:'Customer Service Vietnam (VN88)', MR:0, PC:11},
+  {name:'Information Technology', MR:3, PC:7},
+  {name:'Telesales Marketing Vietnam (W88)', MR:11, PC:0},
+  {name:'Payment (VN88)', MR:0, PC:10},
+  {name:'Telesales Marketing Thailand', MR:7, PC:2},
+  {name:'Finance - Treasury (VND)', MR:0, PC:8},
+  {name:'Human Resource', MR:4, PC:3},
+  {name:'Marketing Thailand', MR:8, PC:0},
+  {name:'Customer Service Cambodia', MR:7, PC:0},
+  {name:'Marketing Vietnam (W88)', MR:8, PC:0},
+  {name:'Telesales Marketing Vietnam (VN88)', MR:7, PC:0},
+  {name:'Customer Service Malaysia', MR:6, PC:0},
+  {name:'Customer Service VIP Indonesia', MR:3, PC:3},
+  {name:'Customer Service India', MR:0, PC:5},
+  {name:'Marketing China', MR:5, PC:0},
+  {name:'Marketing Indonesia', MR:3, PC:1},
+  {name:'Marketing Vietnam (VN88)', MR:5, PC:0},
+  {name:'Quality Assurance', MR:5, PC:0},
+  {name:'Customer Service China', MR:4, PC:0},
+  {name:'Telesales Marketing Indonesia', MR:4, PC:0},
+  {name:'Compliance', MR:3, PC:0},
+  {name:'Customer Service VIP China', MR:2, PC:1},
+  {name:'Finance - Treasury (IDR)', MR:1, PC:3},
+  {name:'Finance -Treasury (CNY)', MR:0, PC:3},
+  {name:'Promotion', MR:1, PC:2},
+  {name:'Marketing Malaysia', MR:2, PC:0},
+  {name:'Payment (GameWallet)', MR:1, PC:1},
+  {name:'Customer Service Bangladesh', MR:1, PC:0},
+  {name:'Customer Service VIP', MR:1, PC:0},
+  {name:'Finance- Corporate (SL)', MR:1, PC:0},
+  {name:'Marketing China (BR88)', MR:0, PC:1},
+  {name:'Marketing India', MR:0, PC:1},
+  {name:'Operator Support', MR:1, PC:0},
+  {name:'Payment (BR88)', MR:0, PC:1},
+  {name:'Telesales Marketing Thailand (Alpha88)', MR:0, PC:1},
+  {name:'Telesales Marketing Vietnam (Vn88)', MR:1, PC:0},
+  {name:'Customer Services & Sales Myanmar', MR:4, PC:0},
+  {name:'Customer Service China (W88)', MR:1, PC:0},
+  {name:'Social Media Pakistan', MR:1, PC:0},
+  {name:'Marketing Pakistan', MR:0, PC:1}
+];
+const maxDept=70;
+const deptTbl=document.getElementById('dept-tbl-body');
+const sortedDept=deptData.filter(d=>d.MR+d.PC>0).sort((a,b)=>(b.MR+b.PC)-(a.MR+a.PC));
+sortedDept.forEach((d,idx)=>{
+  const total=d.MR+d.PC;
+  const pct=((total/378)*100).toFixed(1);
+  const barW=Math.round((total/maxDept)*100);
+  deptTbl.innerHTML+=`<tr class="clickable-row" onclick="toggleDeptDetail(${idx})" style="cursor:pointer;">
+    <td>${d.name} <span style="opacity:.4;font-size:9px;">▸</span></td>
+    <td style="color:var(--mr);font-weight:600;">${d.MR||'—'}</td>
+    <td style="color:var(--pc);font-weight:600;">${d.PC||'—'}</td>
+    <td style="font-weight:700;font-family:'Syne',sans-serif;">${total}</td>
+    <td><div class="pct-bar"><div class="pb-bg"><div class="pb-fill" style="width:${barW}%;background:var(--accent);"></div></div><span style="font-size:10px;color:var(--muted);">${pct}%</span></div></td>
+  </tr>
+  <tr id="dept-detail-${idx}" class="dept-detail-row" style="display:none;">
+    <td colspan="5" style="padding:0;">
+      <div style="padding:10px 14px;background:rgba(0,201,255,.04);border-left:2px solid var(--accent);">
+        <div style="display:flex;align-items:center;gap:8px;font-size:10px;">
+          <span style="width:40px;color:var(--mr);">MR</span>
+          <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="width:${total>0?Math.round(d.MR/total*100):0}%;height:100%;background:var(--mr);"></div>
+          </div>
+          <span style="width:28px;text-align:right;color:var(--muted);">${d.MR||0}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:10px;margin-top:6px;">
+          <span style="width:40px;color:var(--pc);">PCBPO</span>
+          <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+            <div style="width:${total>0?Math.round(d.PC/total*100):0}%;height:100%;background:var(--pc);"></div>
+          </div>
+          <span style="width:28px;text-align:right;color:var(--muted);">${d.PC||0}</span>
+        </div>
+      </div>
+    </td>
+  </tr>`;
+});
+
+function toggleDeptDetail(idx){
+  const row=document.getElementById('dept-detail-'+idx);
+  const isOpen=row.style.display!=='none';
+  document.querySelectorAll('.dept-detail-row').forEach(r=>r.style.display='none');
+  if(!isOpen) row.style.display='table-row';
+}
+
+// Manila Nationality table — from Masterlist Jul 01 2026 (Expat + WR + NZ sheets)
+const natMnlData=[
+  {name:'Filipino',   flag:'🇵🇭', count:135},
+  {name:'Korean',     flag:'🇰🇷', count:5},
+  {name:'Malaysian',  flag:'🇲🇾', count:2},
+  {name:'Vietnamese', flag:'🇻🇳', count:1},
+];
+const maxMnlNat=136;
+const natMnlTbl=document.getElementById('nat-mnl-tbl-body');
+natMnlData.sort((a,b)=>b.count-a.count).forEach(d=>{
+  const pct=((d.count/144)*100).toFixed(1);
+  const barW=Math.round((d.count/maxMnlNat)*100);
+  natMnlTbl.innerHTML+=`<tr>
+    <td>${d.flag} ${d.name}</td>
+    <td style="color:var(--mnl);font-weight:600;">${d.count}</td>
+    <td style="font-weight:700;font-family:'Syne',sans-serif;">${d.count}</td>
+    <td><div class="pct-bar"><div class="pb-bg"><div class="pb-fill" style="width:${barW}%;background:var(--mnl);"></div></div><span style="font-size:10px;color:var(--muted);">${pct}%</span></div></td>
+  </tr>`;
+});
+
+// Manila Department table — from Masterlist Jul 01 2026 (WR + NZ + Expat sheets)
+const deptMnlData=[
+  {name:'Finance - Audit', count:30},
+  {name:'Payment', count:24},
+  {name:'Finance - Corporate', count:22},
+  {name:'Compliance', count:15},
+  {name:'Number Games & P2P Support', count:10},
+  {name:'Information Technology', count:8},
+  {name:'Customer Service Korea', count:5},
+  {name:'General Affairs', count:4},
+  {name:'General Affairs Driver', count:5},
+  {name:'Surveillance', count:4},
+  {name:'Human Resource', count:4},
+  {name:'Operator Support', count:4},
+  {name:'Finance - Treasury', count:2},
+  {name:'Legal and Regulatory', count:2},
+  {name:'General Affairs Housekeeper', count:2},
+  {name:'Marketing Vietnam (VN88)', count:1},
+  {name:'Marketing (GPI)', count:1},
+];
+const maxDeptMnl=30;
+const deptMnlTbl=document.getElementById('dept-mnl-tbl-body');
+deptMnlData.forEach(d=>{
+  const pct=((d.count/144)*100).toFixed(1);
+  const barW=Math.round((d.count/maxDeptMnl)*100);
+  deptMnlTbl.innerHTML+=`<tr>
+    <td>${d.name}</td>
+    <td style="color:var(--mnl);font-weight:600;">${d.count}</td>
+    <td style="font-weight:700;font-family:'Syne',sans-serif;">${d.count}</td>
+    <td><div class="pct-bar"><div class="pb-bg"><div class="pb-fill" style="width:${barW}%;background:var(--mnl);"></div></div><span style="font-size:10px;color:var(--muted);">${pct}%</span></div></td>
+  </tr>`;
+});
+
+// ─── NATIONALITY TABLE ───
+const natData=[
+  {name:'Vietnamese',flag:'🇻🇳',MR:62,PC:23},
+  {name:'Filipino',flag:'🇵🇭',MR:30,PC:32},
+  {name:'Thai',flag:'🇹🇭',MR:44,PC:13},
+  {name:'Cambodian',flag:'🇰🇭',MR:7,PC:40},
+  {name:'Indonesian',flag:'🇮🇩',MR:28,PC:18},
+  {name:'Sri Lankan',flag:'🇱🇰',MR:16,PC:20},
+  {name:'Chinese',flag:'🇨🇳',MR:13,PC:5},
+  {name:'Malaysian',flag:'🇲🇾',MR:5,PC:9},
+  {name:'Indian',flag:'🇮🇳',MR:1,PC:4},
+  {name:'Nepalese',flag:'🇳🇵',MR:0,PC:2},
+  {name:'Saint Lucia',flag:'🇱🇨',MR:1,PC:0},
+  {name:'Italiana',flag:'🇮🇹',MR:1,PC:0},
+  {name:'Myanmar',flag:'🇲🇲',MR:4,PC:0}
+];
+const maxNat=84;
+const natTbl=document.getElementById('nat-tbl-body');
+natData.forEach((d,idx)=>{
+  const total=d.MR+d.PC;
+  const pct=((total/378)*100).toFixed(1);
+  const barW=Math.round((total/maxNat)*100);
+  natTbl.innerHTML+=`<tr class="clickable-row" onclick="toggleNatDetail(${idx})" style="cursor:pointer;">
+    <td>${d.flag} ${d.name} <span style="opacity:.4;font-size:9px;">▸</span></td>
+    <td style="color:var(--mr);font-weight:600;">${d.MR}</td>
+    <td style="color:var(--pc);font-weight:600;">${d.PC}</td>
+    <td style="font-weight:700;font-family:'Syne',sans-serif;">${total}</td>
+    <td><div class="pct-bar"><div class="pb-bg"><div class="pb-fill" style="width:${barW}%;background:var(--accent);"></div></div><span style="font-size:10px;color:var(--muted);">${pct}%</span></div></td>
+  </tr>
+  <tr id="nat-detail-${idx}" class="nat-detail-row" style="display:none;">
+    <td colspan="5" style="padding:0;">
+      <div id="nat-detail-content-${idx}" style="padding:10px 14px;background:rgba(0,201,255,.04);border-left:2px solid var(--accent);font-size:11px;color:var(--muted);"></div>
+    </td>
+  </tr>`;
+});
+
+function toggleNatDetail(idx){
+  const row=document.getElementById('nat-detail-'+idx);
+  const content=document.getElementById('nat-detail-content-'+idx);
+  const isOpen=row.style.display!=='none';
+  // close all other open rows first
+  document.querySelectorAll('.nat-detail-row').forEach(r=>r.style.display='none');
+  if(isOpen) return; // was already open, just close it (handled above)
+  const d=natData[idx];
+  const key=d.name.toUpperCase();
+  const g=globeNatData[key];
+  if(g){
+    content.innerHTML=`♂ Male: <strong style="color:var(--text);">${g.male}</strong> &nbsp;·&nbsp; ♀ Female: <strong style="color:var(--text);">${g.female}</strong> &nbsp;·&nbsp; Expat: <strong style="color:var(--text);">${g.expat}</strong> &nbsp;·&nbsp; Local: <strong style="color:var(--text);">${g.local}</strong>`;
+  } else {
+    content.innerHTML=`MR: <strong style="color:var(--mr);">${d.MR}</strong> &nbsp;·&nbsp; PCBPO: <strong style="color:var(--pc);">${d.PC}</strong>`;
+  }
+  row.style.display='table-row';
+}
+
+// ─── GLOBE ───
+let globeReady=false;
+
+const globeNatData={
+  VIETNAMESE:{total:85,MR:62,PC:23,male:37,female:48,expat:85,local:0,lat:14,lon:108,flag:'🇻🇳'},
+  FILIPINO:{total:62,MR:30,PC:32,male:33,female:29,expat:62,local:0,lat:12.8,lon:121.8,flag:'🇵🇭'},
+  THAI:{total:57,MR:44,PC:13,male:17,female:40,expat:57,local:0,lat:13,lon:100.5,flag:'🇹🇭'},
+  CAMBODIAN:{total:47,MR:7,PC:40,male:20,female:27,expat:47,local:0,lat:12.6,lon:104.9,flag:'🇰🇭'},
+  INDONESIAN:{total:46,MR:28,PC:18,male:20,female:26,expat:46,local:0,lat:-2.5,lon:118,flag:'🇮🇩'},
+  'SRI LANKAN':{total:36,MR:16,PC:20,male:13,female:23,expat:0,local:36,lat:7.9,lon:80.7,flag:'🇱🇰'},
+  CHINESE:{total:18,MR:13,PC:5,male:11,female:7,expat:18,local:0,lat:35.9,lon:104.2,flag:'🇨🇳'},
+  MALAYSIAN:{total:14,MR:5,PC:9,male:8,female:6,expat:14,local:0,lat:4.2,lon:108,flag:'🇲🇾'},
+  INDIAN:{total:5,MR:1,PC:4,male:2,female:3,expat:5,local:0,lat:20.6,lon:78.9,flag:'🇮🇳'},
+  NEPALESE:{total:2,MR:0,PC:2,male:1,female:1,expat:2,local:0,lat:28.4,lon:84.1,flag:'🇳🇵'},
+  BANGLADESHI:{total:1,MR:0,PC:1,male:1,female:0,expat:1,local:0,lat:23.7,lon:90.4,flag:'🇧🇩'},
+  ITALIANA:{total:1,MR:1,PC:0,male:0,female:1,expat:1,local:0,lat:42.5,lon:12.6,flag:'🇮🇹'},
+  'SAINT LUCIA':{total:1,MR:1,PC:0,male:1,female:0,expat:1,local:0,lat:13.9,lon:-60.9,flag:'🇱🇨'},
+  MYANMAR:{total:4,MR:4,PC:0,male:3,female:1,expat:4,local:0,lat:21.9,lon:95.9,flag:'🇲🇲'},
+  MANILA:{total:143,MR:0,PC:0,male:64,female:79,expat:8,local:135,lat:14.6,lon:121,flag:'🇵🇭',isMnl:true},
+};
+
+function buildGlobe(){
+  const canvas=document.getElementById('globe-canvas');
+  const W=canvas.parentElement.clientWidth;
+  const H=600;
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  const cx=W/2, cy=H/2;
+  const R=Math.min(W,H)*0.36;
+  let rotY=0.3, rotX=0.18;
+  let dragging=false, lastX=0, lastY=0;
+  let velY=0.003, autoRot=true;
+  let animT=0;
+
+  // Continent outlines (simplified country polygons lat/lon)
+  const continents=[
+    // North America outline
+    [[49,-124],[49,-95],[47,-86],[45,-74],[47,-53],[44,-66],[37,-76],[25,-80],[20,-87],[16,-90],[10,-83],[8,-77],[9,-79],[5,-77],[10,-75],[12,-72],[11,-63],[16,-62],[24,-78],[25,-77],[30,-81],[30,-81],[38,-75],[43,-70],[45,-64],[46,-60],[47,-53],[52,-56],[58,-62],[63,-64],[62,-73],[60,-78],[59,-93],[57,-92],[56,-90],[58,-95],[60,-94],[62,-92],[58,-95],[62,-100],[65,-105],[70,-110],[72,-124],[70,-135],[68,-139],[60,-140],[60,-137],[55,-130],[50,-127],[49,-124]],
+    // South America
+    [[10,-73],[11,-63],[10,-62],[8,-60],[5,-52],[2,-51],[0,-50],[-5,-35],[-10,-37],[-15,-39],[-23,-43],[-33,-71],[-55,-67],[-55,-64],[-45,-65],[-40,-62],[-35,-57],[-30,-50],[-20,-40],[-10,-38],[0,-50],[5,-52],[10,-61],[12,-62],[10,-73]],
+    // Europe
+    [[36,-9],[44,-9],[44,-1],[51,2],[51,10],[55,8],[56,22],[63,26],[70,28],[70,31],[68,28],[65,22],[60,22],[58,26],[57,21],[58,11],[58,5],[51,3],[49,2],[44,-1],[37,-9],[36,-5],[36,-9]],
+    // Africa
+    [[37,10],[37,-5],[32,-5],[16,-17],[5,-5],[4,2],[4,8],[4,10],[-5,12],[-10,14],[-17,12],[-30,17],[-35,19],[-34,26],[-22,35],[-11,40],[0,42],[10,42],[12,43],[14,40],[20,38],[30,32],[32,24],[30,20],[30,14],[20,13],[10,14],[4,10]],
+    // Asia (simplified)
+    [[37,36],[40,27],[41,22],[37,22],[37,36],[42,44],[40,50],[38,48],[37,36],[42,54],[44,56],[48,58],[54,60],[60,62],[62,72],[60,73],[56,70],[52,60],[46,60],[42,54]],
+    [[60,62],[65,65],[68,70],[70,80],[74,90],[72,100],[68,106],[65,110],[66,120],[68,130],[70,140],[68,140],[65,136],[62,130],[60,120],[58,108],[56,90],[58,72],[60,62]],
+    [[28,122],[23,120],[10,124],[5,120],[2,110],[5,100],[12,100],[18,102],[22,104],[26,120],[28,122]],
+    [[-5,140],[-10,130],[-18,126],[-25,115],[-32,115],[-34,122],[-38,145],[-38,148],[-32,152],[-24,153],[-18,148],[-14,145],[-10,142],[-8,143],[-5,140]],
+  ].map(path=>path.map(([lat,lon])=>({lat:lat*Math.PI/180,lon:lon*Math.PI/180})));
+
+  function ll3d(lat,lon){
+    return{x:Math.cos(lat)*Math.sin(lon),y:Math.sin(lat),z:Math.cos(lat)*Math.cos(lon)};
+  }
+
+  function project(x3,y3,z3){
+    const x2=x3*Math.cos(rotY)+z3*Math.sin(rotY);
+    const z2=-x3*Math.sin(rotY)+z3*Math.cos(rotY);
+    const y2=y3*Math.cos(rotX)-z2*Math.sin(rotX);
+    const z3f=y3*Math.sin(rotX)+z2*Math.cos(rotX);
+    const sc=R/(1.6-z3f*0.5);
+    return{px:cx+x2*sc,py:cy-y2*sc,z:z3f,vis:z3f<0.1};
+  }
+
+  const dots=Object.entries(globeNatData).map(([name,d])=>{
+    const lat=d.lat*Math.PI/180, lon=d.lon*Math.PI/180;
+    let col;
+    if(d.isMnl) col='#ffb347';
+    else if(d.MR>0&&d.PC>0) col='#39ff98';
+    else if(d.MR>0) col='#00c9ff';
+    else col='#e36bff';
+    return{name,d,col,lat,lon,size:d.isMnl?10:5+Math.sqrt(d.total)*1.6};
+  });
+
+  function drawFrame(){
+    ctx.clearRect(0,0,W,H);
+
+    // Space background
+    const bg=ctx.createRadialGradient(cx,cy,R*.05,cx,cy,R*1.2);
+    bg.addColorStop(0,'#071828');bg.addColorStop(1,'#020a14');
+    ctx.beginPath();ctx.arc(cx,cy,R*1.2,0,Math.PI*2);ctx.fillStyle=bg;ctx.fill();
+
+    // Atmosphere
+    const atm=ctx.createRadialGradient(cx,cy,R*.95,cx,cy,R*1.1);
+    atm.addColorStop(0,'rgba(0,120,255,0.15)');atm.addColorStop(1,'rgba(0,80,200,0)');
+    ctx.beginPath();ctx.arc(cx,cy,R*1.1,0,Math.PI*2);ctx.fillStyle=atm;ctx.fill();
+
+    // Photorealistic ocean — deep blue with light scatter
+    const ocean=ctx.createRadialGradient(cx-R*.3,cy-R*.25,R*.02,cx,cy,R);
+    ocean.addColorStop(0,'#1a5080');ocean.addColorStop(.3,'#0e3a60');ocean.addColorStop(.65,'#071e3a');ocean.addColorStop(1,'#030d1c');
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=ocean;ctx.fill();
+
+    // Grid lines (faint)
+    ctx.strokeStyle='rgba(0,100,180,0.12)';ctx.lineWidth=0.5;
+    for(let lat=-75;lat<=75;lat+=15){
+      ctx.beginPath();let f=true;
+      for(let lon=0;lon<=360;lon+=4){
+        const p=ll3d(lat*Math.PI/180,lon*Math.PI/180);
+        const pr=project(p.x,p.y,p.z);
+        if(pr.vis){if(f){ctx.moveTo(pr.px,pr.py);f=false;}else ctx.lineTo(pr.px,pr.py);}else f=true;
+      }ctx.stroke();
+    }
+    for(let lon=0;lon<360;lon+=15){
+      ctx.beginPath();let f=true;
+      for(let lat=-90;lat<=90;lat+=4){
+        const p=ll3d(lat*Math.PI/180,lon*Math.PI/180);
+        const pr=project(p.x,p.y,p.z);
+        if(pr.vis){if(f){ctx.moveTo(pr.px,pr.py);f=false;}else ctx.lineTo(pr.px,pr.py);}else f=true;
+      }ctx.stroke();
+    }
+
+    // Draw continent shapes
+    continents.forEach(path=>{
+      ctx.beginPath();
+      let started=false;
+      path.forEach(({lat,lon})=>{
+        const p3=ll3d(lat,lon);
+        const pr=project(p3.x,p3.y,p3.z);
+        if(pr.vis){
+          if(!started){ctx.moveTo(pr.px,pr.py);started=true;}
+          else ctx.lineTo(pr.px,pr.py);
+        } else started=false;
+      });
+      ctx.fillStyle='rgba(22,65,30,0.82)';
+      ctx.strokeStyle='rgba(30,100,45,0.5)';
+      ctx.lineWidth=0.8;
+      ctx.fill();ctx.stroke();
+    });
+
+    // Photorealistic lighting
+    const light=ctx.createRadialGradient(cx-R*.4,cy-R*.4,R*.05,cx,cy,R);
+    light.addColorStop(0,'rgba(180,220,255,0.18)');light.addColorStop(.35,'rgba(60,140,255,0.08)');light.addColorStop(.7,'rgba(0,0,0,0)');light.addColorStop(1,'rgba(0,0,40,0.35)');
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=light;ctx.fill();
+    // City-lights aurora edge
+    const aurora=ctx.createRadialGradient(cx,cy,R*.92,cx,cy,R*1.06);
+    aurora.addColorStop(0,'rgba(0,180,255,0.0)');aurora.addColorStop(.5,'rgba(0,220,180,0.08)');aurora.addColorStop(1,'rgba(0,100,200,0.0)');
+    ctx.beginPath();ctx.arc(cx,cy,R*1.06,0,Math.PI*2);ctx.fillStyle=aurora;ctx.fill();
+
+    // Globe border
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
+    ctx.strokeStyle='rgba(0,150,255,0.3)';ctx.lineWidth=1.5;ctx.stroke();
+
+    // Dots
+    const projDots=dots.map(dot=>{
+      const p3=ll3d(dot.lat,dot.lon);
+      const pr=project(p3.x,p3.y,p3.z);
+      return{...dot,...pr};
+    }).sort((a,b)=>a.z-b.z);
+
+    projDots.forEach(dot=>{
+      if(!dot.vis) return;
+      const bright=0.5+dot.z*0.5;
+      const pulse=0.88+0.12*Math.sin(animT*1.4+dot.d.total*.3);
+      const sz=dot.size*pulse;
+      const hex=dot.col.replace('#','');
+      const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
+
+      // Glow
+      const glow=ctx.createRadialGradient(dot.px,dot.py,0,dot.px,dot.py,sz*3.5);
+      glow.addColorStop(0,`rgba(${r},${g},${b},${0.35*bright})`);
+      glow.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath();ctx.arc(dot.px,dot.py,sz*3.5,0,Math.PI*2);ctx.fillStyle=glow;ctx.fill();
+
+      // Dot
+      ctx.beginPath();ctx.arc(dot.px,dot.py,sz,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},${0.75+0.25*bright})`;ctx.fill();
+      ctx.strokeStyle=`rgba(255,255,255,${0.35*bright})`;ctx.lineWidth=1;ctx.stroke();
+
+      // Label for large dots
+      if(dot.d.total>=40&&dot.z>-0.2){
+        ctx.font=`bold 10px 'DM Sans',sans-serif`;
+        ctx.fillStyle=`rgba(255,255,255,${0.85*bright})`;
+        ctx.textAlign='center';
+        ctx.fillText(`${dot.d.flag} ${dot.d.total}`,dot.px,dot.py-sz-5);
+      }
+    });
+
+    animT+=0.018;
+    if(autoRot&&!dragging) rotY+=0.004;
+    requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+
+  canvas.addEventListener('mousedown',e=>{dragging=true;autoRot=false;lastX=e.offsetX;lastY=e.offsetY;});
+  canvas.addEventListener('mousemove',e=>{if(!dragging)return;const dx=e.offsetX-lastX,dy=e.offsetY-lastY;rotY+=dx*.006;rotX+=dy*.004;rotX=Math.max(-1.3,Math.min(1.3,rotX));lastX=e.offsetX;lastY=e.offsetY;});
+  canvas.addEventListener('mouseup',()=>{dragging=false;setTimeout(()=>autoRot=true,3000);});
+  canvas.addEventListener('mouseleave',()=>dragging=false);
+
+  canvas.addEventListener('click',e=>{
+    const mx=e.offsetX,my=e.offsetY;
+    let best=null,bestD=9999;
+    dots.forEach(dot=>{
+      const p3=ll3d(dot.lat,dot.lon);
+      const pr=project(p3.x,p3.y,p3.z);
+      if(!pr.vis) return;
+      const d=Math.hypot(mx-pr.px,my-pr.py);
+      if(d<dot.size*4+12&&d<bestD){bestD=d;best={...dot,...pr};}
+    });
+    if(best){
+      document.getElementById('cp-name').textContent=`${best.d.flag} ${best.name.charAt(0)+best.name.slice(1).toLowerCase()}`;
+      if(best.d.isMnl){
+        document.getElementById('cp-stats').innerHTML=`
+          <div class="cp-row"><span class="cp-lbl">Total Headcount</span><span class="cp-val" style="color:var(--a4)">${best.d.total}</span></div>
+          <div class="cp-row"><span class="cp-lbl">Location</span><span class="cp-val">Manila, Philippines</span></div>
+          <div class="cp-row"><span class="cp-lbl">♂ Male</span><span class="cp-val">${best.d.male}</span></div>
+          <div class="cp-row"><span class="cp-lbl">♀ Female</span><span class="cp-val">${best.d.female}</span></div>
+          <div class="cp-row"><span class="cp-lbl">Expat</span><span class="cp-val">${best.d.expat}</span></div>
+          <div class="cp-row"><span class="cp-lbl">Local</span><span class="cp-val">${best.d.local}</span></div>`;
+      } else {
+        const pct=((best.d.total/378)*100).toFixed(1);
+        document.getElementById('cp-stats').innerHTML=`
+          <div class="cp-row"><span class="cp-lbl">SL Total</span><span class="cp-val" style="color:var(--accent)">${best.d.total}</span></div>
+          <div class="cp-row"><span class="cp-lbl">% of SL Workforce</span><span class="cp-val">${pct}%</span></div>
+          <div class="cp-row"><span class="cp-lbl">MR Branch</span><span class="cp-val" style="color:var(--mr)">${best.d.MR}</span></div>
+          <div class="cp-row"><span class="cp-lbl">PCBPO Branch</span><span class="cp-val" style="color:var(--pc)">${best.d.PC}</span></div>
+          <div class="cp-row"><span class="cp-lbl">♂ Male</span><span class="cp-val">${best.d.male}</span></div>
+          <div class="cp-row"><span class="cp-lbl">♀ Female</span><span class="cp-val">${best.d.female}</span></div>
+          <div class="cp-row"><span class="cp-lbl">Expat</span><span class="cp-val">${best.d.expat}</span></div>
+          <div class="cp-row"><span class="cp-lbl">Local</span><span class="cp-val">${best.d.local}</span></div>`;
+      }
+      document.getElementById('country-panel').classList.add('show');
+    }
+  });
+
+  canvas.addEventListener('touchstart',e=>{e.preventDefault();dragging=true;autoRot=false;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;},{passive:false});
+  canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!dragging)return;const dx=e.touches[0].clientX-lastX,dy=e.touches[0].clientY-lastY;rotY+=dx*.006;rotX+=dy*.004;rotX=Math.max(-1.3,Math.min(1.3,rotX));lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;},{passive:false});
+  canvas.addEventListener('touchend',()=>{dragging=false;setTimeout(()=>autoRot=true,3000);});
+}
+
+// ─── RECRUITMENT TAB — Status Pie Charts ───
+function pieOpts(){
+  return{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:8,font:{size:9}}}}
+  };
+}
+
+// MR Local — Status pie: Requested(3), Hired(0)
+new Chart(document.getElementById('mrLocalPie'),{
+  type:'doughnut',
+  data:{labels:['Pending','Hired'],
+    datasets:[{data:[3,0],backgroundColor:['rgba(255,179,71,.8)','rgba(57,255,152,.8)'],borderColor:'transparent',borderWidth:0,hoverOffset:6}]},
+  options:pieOpts()
+});
+
+// PC Local — Status pie: Requested(1), Hired(0)
+new Chart(document.getElementById('pcLocalPie'),{
+  type:'doughnut',
+  data:{labels:['Pending','Hired'],
+    datasets:[{data:[3,0],backgroundColor:['rgba(255,179,71,.8)','rgba(57,255,152,.8)'],borderColor:'transparent',borderWidth:0,hoverOffset:6}]},
+  options:pieOpts()
+});
+
+// MR Expat — Status pie: Requested(4), Hired(0)
+new Chart(document.getElementById('mrExpatPie'),{
+  type:'doughnut',
+  data:{labels:['Pending','Hired'],
+    datasets:[{data:[6,0],backgroundColor:['rgba(255,179,71,.8)','rgba(57,255,152,.8)'],borderColor:'transparent',borderWidth:0,hoverOffset:6}]},
+  options:pieOpts()
+});
+
+// PC Expat — Status pie: Requested(2), Hired(0)
+new Chart(document.getElementById('pcExpatPie'),{
+  type:'doughnut',
+  data:{labels:['Pending','Hired'],
+    datasets:[{data:[1,0],backgroundColor:['rgba(255,179,71,.8)','rgba(57,255,152,.8)'],borderColor:'transparent',borderWidth:0,hoverOffset:6}]},
+  options:pieOpts()
+});
+
+// ─── WORKFORCE TAB — Weekly Onboarding Trend (October) ───
+new Chart(document.getElementById('onboardChart'),{
+  type:'bar',
+  data:{
+    labels:['Week 1 (1–7)','Week 2 (8–14)','Week 3 (15–31)'],
+    datasets:[{
+      label:'New Joiners',
+      data:[0,10,0],
+      backgroundColor:'rgba(57,255,152,.7)',
+      borderColor:'#39ff98',
+      borderWidth:1,borderRadius:4
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:9}}},
+      y:{grid:{color:'rgba(26,48,80,.4)'},beginAtZero:true,ticks:{precision:0}}
+    },
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' onboarded'}}}
+  }
+});
+
+// ─── WORKFORCE TAB — Weekly Offboarding Trend (October) ───
+new Chart(document.getElementById('offboardTrendChart'),{
+  type:'bar',
+  data:{
+    labels:['Week 1 (1–7)','Week 2 (8–14)','Week 3 (15–31)'],
+    datasets:[{
+      label:'Departures',
+      data:[0,6,0],
+      backgroundColor:'rgba(255,100,100,.7)',
+      borderColor:'#ff6464',
+      borderWidth:1,borderRadius:4
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:9}}},
+      y:{grid:{color:'rgba(26,48,80,.4)'},beginAtZero:true,ticks:{precision:0}}
+    },
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' departures'}}}
+  }
+});
+
+// ─── WORKFORCE TAB — Weekly Attrition Rate Trend (October) ───
+new Chart(document.getElementById('attritionChart'),{
+  type:'line',
+  data:{
+    labels:['Week 1 (1–7)','Week 2 (8–14)','Week 3 (15–31)'],
+    datasets:[{
+      label:'Attrition Rate',
+      data:[0,1.59,0],
+      borderColor:'#ffb347',
+      backgroundColor:'rgba(255,179,71,.15)',
+      borderWidth:2.5,pointRadius:5,pointHoverRadius:7,
+      pointBackgroundColor:'#ffb347',pointBorderColor:'#fff',pointBorderWidth:1.5,
+      tension:.4,fill:true
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    scales:{
+      x:{grid:{color:'rgba(26,48,80,.25)'},ticks:{font:{size:9}}},
+      y:{grid:{color:'rgba(26,48,80,.4)'},beginAtZero:true,ticks:{callback:v=>v+'%'}}
+    },
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+'% attrition'}}}
+  }
+});
+
+// ─── WORKFORCE TAB — Offboard by Nationality (as of 14th October 2026) ───
+const offboardMR=[{name:'Sri Lankan', flag:'🇱🇰', count:1}];
+const maxOffMR=1;
+const offMrTbl=document.getElementById('offboard-mr-tbl');
+if(offboardMR.length===0){
+  offMrTbl.innerHTML=`<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:16px 0;">No MR offboarding recorded in this period</td></tr>`;
+} else {
+offboardMR.sort((a,b)=>b.count-a.count).forEach((d,idx)=>{
+  const pct=((d.count/6)*100).toFixed(1);
+  const barW=Math.round((d.count/maxOffMR)*100);
+  offMrTbl.innerHTML+=`<tr class="clickable-row" onclick="toggleOffDetail('mr',${idx})" style="cursor:pointer;">
+    <td>${d.flag} ${d.name} <span style="opacity:.4;font-size:9px;">▸</span></td>
+    <td style="font-weight:700;font-family:'Syne',sans-serif;">${d.count}</td>
+    <td><div class="pct-bar"><div class="pb-bg"><div class="pb-fill" style="width:${barW}%;background:var(--mr);"></div></div><span style="font-size:10px;color:var(--muted);">${pct}%</span></div></td>
+  </tr>
+  <tr id="off-detail-mr-${idx}" class="off-detail-row" style="display:none;">
+    <td colspan="3" style="padding:0;">
+      <div style="padding:8px 14px;background:rgba(0,201,255,.04);border-left:2px solid var(--mr);font-size:10px;color:var(--muted);">
+        ${(d.people||[]).map(p=>`• ${p}`).join('<br>')}
+      </div>
+    </td>
+  </tr>`;
+});
+}
+
+function toggleOffDetail(side,idx){
+  const row=document.getElementById('off-detail-'+side+'-'+idx);
+  const isOpen=row.style.display!=='none';
+  document.querySelectorAll('.off-detail-row').forEach(r=>r.style.display='none');
+  if(!isOpen) row.style.display='table-row';
+}
+
+const offboardPC=[{name:'Filipino', flag:'🇵🇭', count:5}];
+const maxOffPC=5;
+const offPcTbl=document.getElementById('offboard-pc-tbl');
+if(offboardPC.length===0){
+  offPcTbl.innerHTML=`<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:16px 0;">No PC offboarding recorded in this period</td></tr>`;
+} else {
+  offboardPC.sort((a,b)=>b.count-a.count).forEach(d=>{
+    const pct=((d.count/7)*100).toFixed(1);
+    const barW=Math.round((d.count/maxOffPC)*100);
+    offPcTbl.innerHTML+=`<tr>
+      <td>${d.flag} ${d.name}</td>
+      <td style="font-weight:700;font-family:'Syne',sans-serif;">${d.count}</td>
+      <td><div class="pct-bar"><div class="pb-bg"><div class="pb-fill" style="width:${barW}%;background:var(--pc);"></div></div><span style="font-size:10px;color:var(--muted);">${pct}%</span></div></td>
+    </tr>`;
+  });
+}
+</script>
+</body>
+</html>

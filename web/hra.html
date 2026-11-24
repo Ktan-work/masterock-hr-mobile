@@ -325,7 +325,7 @@ const MENUS = {
   hr: [['EMPLOYEE', [['lookup', 'Employee Lookup'], ['team', 'Team Lookup'], ['update', 'Employee Update'], ['dropbox', 'Drop Box'], ['contracts', 'Employee Contracts 🔒', 4]]],
        ['FORMS', [['infoform', 'Employee Info Form'], ['visa', 'Residence Visa Form'], ['epf', 'EPF / ETF Claims'], ['coe', 'Certificate of Employment'],
                   ['idphotos', 'ID Photos (35x45)'], ['pcforms', 'PC Forms']]],
-       ['REPORTS', [['alerts', 'Alerts'], ['cpcec', 'CPCEC Report', 3], ['dashboard', 'HR Dashboard', 3]]]],
+       ['REPORTS', [['alerts', 'Alerts'], ['cpcec', 'CPCEC Report'], ['dashboard', 'HR Dashboard']]]],
   admin: [['ADMIN', [['office', 'Office', 4], ['fleet', 'Fleet', 4], ['accommodation', 'Accommodation', 4]]]],
 };
 document.querySelectorAll('[data-sys]').forEach(b => b.onclick = () => openSystem(b.dataset.sys));
@@ -341,7 +341,8 @@ function openSystem(sys) {
   go(sys === 'hr' ? 'lookup' : 'office');
 }
 const PAGES = { lookup: pageLookup, team: pageTeam, update: pageUpdate, dropbox: pageDropbox, alerts: pageAlerts,
-  infoform: pageInfoForm, visa: pageVisa, epf: pageEpf, coe: pageCoe, idphotos: pageIdPhotos, pcforms: pagePcForms };
+  infoform: pageInfoForm, visa: pageVisa, epf: pageEpf, coe: pageCoe, idphotos: pageIdPhotos, pcforms: pagePcForms,
+  cpcec: pageCpcec, dashboard: pageDashboard };
 function go(k) {
   pageKey = k; document.querySelectorAll('.nav').forEach(b => b.classList.toggle('on', b.dataset.page === k));
   const item = MENUS[system].flatMap(g => g[1]).find(i => i[0] === k);
@@ -377,7 +378,7 @@ function pageLookup() {
   };
   $('#go').onclick = run; $('#q').onkeydown = e => { if (e.key === 'Enter') run(); };
   $('#to-update').onclick = () => go('update');
-  if (current) showRecord(current); else setTimeout(() => $('#q').focus(), 30);
+  if (current) showRecord(current); else setTimeout(() => { const q = $('#q'); if (q) q.focus(); }, 30);
 }
 async function showRecord(r) {
   current = r;
@@ -784,6 +785,103 @@ function loadForms() {
   })().catch(e => { formsReady = null; throw e; });
   return formsReady;
 }
+/* ======================= Phase 3: reports (CPCEC + HR Dashboard), same rules as the desktop app ======================= */
+let reportsReady = null;
+function loadReports() {
+  if (!reportsReady) reportsReady = (async () => {
+    status('Loading the report engine…');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js');
+    await loadScript(window.HRA_ASSETS + 'hra-reports.js?v=1'); status('');
+  })().catch(e => { reportsReady = null; throw e; });
+  return reportsReady;
+}
+async function tabValues(name) { return (await (await api(sheetUrl(SHEET_ID, `'${name}'`))).json()).values || []; }
+async function writeTabCells(name, cells) {            // cells: [[row, col(1-based), value]]
+  if (!cells.length) return;
+  const data = cells.map(([r, c, v]) => ({ range: `'${name}'!${colLetter(c - 1)}${r}`, values: [[v === '' ? '' : cellValue(v)]] }));
+  await api(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate`, { method: 'POST', body: JSON.stringify({ valueInputOption: 'RAW', data }) });
+}
+async function appendTabRows(name, rowsToAdd) {
+  if (!rowsToAdd.length) return;
+  await api(sheetUrl(SHEET_ID, `'${name}'!A1:V`) + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: JSON.stringify({ values: rowsToAdd }) });
+}
+async function runReport(btn, label, fn) {
+  const old = btn.textContent; btn.disabled = true; btn.textContent = label;
+  try { await loadReports(); await fn(); } catch (e) { console.error(e); if (e.message !== 'signed out') modal('Something went wrong', esc(e.message), [['OK', 'gold', 1]]); }
+  finally { btn.disabled = false; btn.textContent = old; status(''); }
+}
+
+function pageCpcec() {
+  $('#page').innerHTML = `<div class="panel"><h2>CPCEC Report <span class="muted small">(MROCK expats - business visa holders excluded)</span></h2><div class="body">
+    <div class="row-flex"><input class="search" id="cq" placeholder="Search name, passport, visa no …" style="flex:1 1 240px">
+      <select id="cst" style="flex:0 0 170px"><option>All</option><option>Active</option><option>Pending arrival</option><option>Cancelled</option></select>
+      <button class="btn ghost" id="crel">Reload</button><button class="btn gold" id="cxl">Generate CPCEC Report (Excel)</button><button class="btn ghost" id="csync">Sync with Employee Database</button></div>
+    <p class="small muted" id="ccount">Loading…</p>
+    <p class="small muted"><span style="background:#CFE2F3;color:#123;padding:1px 6px;border-radius:3px">Blue</span> = resigned / cancelled · <span style="background:#FCE4D6;color:#321;padding:1px 6px;border-radius:3px">Peach</span> = pending arrival · no colour = active</p></div></div>
+    <div class="panel"><div class="body" style="overflow:auto;max-height:70vh" id="ctab"></div></div>`;
+  let hdr = [], data = [];
+  const show = () => {
+    const q = norm($('#cq').value), st = $('#cst').value;
+    const list = data.filter(r => (!q || norm(r.join(' ')).includes(q)) && (st === 'All' || HRAReports.cpcecStatus(r) === st));
+    const n = Math.max(hdr.length, ...list.map(r => r.length), 0);
+    $('#ctab').innerHTML = `<table class="tbl"><thead><tr>${Array.from({ length: n }, (_, j) => `<th>${esc(hdr[j] || '')}</th>`).join('')}</tr></thead><tbody>` +
+      list.map(r => { const s = HRAReports.cpcecStatus(r), bg = s === 'Cancelled' ? '#CFE2F3' : s === 'Pending arrival' ? '#FCE4D6' : '';
+        return `<tr${bg ? ` style="background:${bg};color:#1b1b1b"` : ''}>${Array.from({ length: n }, (_, j) => `<td>${esc(text(r[j]))}</td>`).join('')}</tr>`; }).join('') + '</tbody></table>';
+    $('#ccount').textContent = `${list.length} of ${data.length} row(s)`;
+  };
+  const load = () => runReport($('#crel'), 'Loading…', async () => {
+    const vals = await tabValues('CPCEC Report');
+    hdr = (vals[2] || []).map(h => String(h).trim()); data = vals.slice(3).filter(r => r.some(x => String(x ?? '').trim())); show();
+  });
+  $('#cq').oninput = show; $('#cst').onchange = show; $('#crel').onclick = load;
+  $('#cxl').onclick = () => runReport($('#cxl'), 'Creating…', async () => {
+    const vals = await tabValues('CPCEC Report'), res = await HRAReports.cpcecExcel(vals);
+    const d = new Date(), name = `CPCEC Report ${d.getDate()} ${d.toLocaleString('en-GB', { month: 'long' })} ${d.getFullYear()}.xlsx`;
+    saveBytes(name, res.bytes, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); toast(`Saved ${name} (${res.rows} rows)`);
+  });
+  $('#csync').onclick = () => runReport($('#csync'), 'Checking…', async () => {
+    await loadData(); const vals = await tabValues('CPCEC Report');
+    const { updates, newRows, log } = HRAReports.cpcecPlan(vals, rows);
+    if (!log.length) { await modal('CPCEC', 'The CPCEC report is already up to date.', [['OK', 'gold', 1]]); return; }
+    const ok = await modal('CPCEC sync', `<p>These changes will be written to the CPCEC Report:</p><pre style="white-space:pre-wrap;max-height:50vh;overflow:auto;font-size:12px">${esc(log.slice(0, 60).join('\n'))}${log.length > 60 ? '\n…' : ''}</pre>`,
+      [['Cancel', 'ghost', 0], [`Save ${log.length} change(s)`, 'gold', 1]]);
+    if (!ok) return;
+    await writeTabCells('CPCEC Report', updates); await appendTabRows('CPCEC Report', newRows);
+    toast(`CPCEC report: ${log.length} change(s) saved`); load();
+  });
+  load();
+}
+
+function pageDashboard() {
+  $('#page').innerHTML = `<div class="panel"><h2>HR Dashboard</h2><div class="body">
+    <p>Everything on the dashboard comes from the Employee Database automatically, except the numbers below (Manila figures, attendance, government contributions). Update them, click Save, then Generate.</p>
+    <div class="row-flex" style="justify-content:flex-end"><button class="btn ghost" id="dsave">Save numbers</button><button class="btn gold" id="dgo">Generate dashboard</button></div>
+    <div id="dres" class="small"></div></div></div>
+    <div class="panel"><div class="body" style="overflow:auto" id="dtab">Loading…</div></div>`;
+  let vals = [], keys = [];
+  const load = () => runReport(document.createElement('button'), '', async () => {      // own throw-away button: doesn't clash with Save's label
+    vals = await tabValues('Dashboard Inputs');
+    const width = Math.max(0, ...vals.map(r => r.length)); vals = vals.map(r => r.concat(new Array(width - r.length).fill('')));
+    keys = vals.map((r, i) => [i + 1, r]).filter(([, r]) => r.length > 2 && HRAReports.isUpperKey(String(r[0]).trim()) && String(r[0]).trim() !== 'KEY');
+    $('#dtab').innerHTML = `<table class="tbl"><thead><tr><th>Item</th><th>Value</th><th>Notes</th></tr></thead><tbody>` +
+      keys.map(([rn, r], i) => `<tr><td>${esc(text(r[1]))}</td><td><input data-i="${i}" value="${esc(text(r[2]))}" style="width:110px"></td><td class="muted">${esc(text(r[3] ?? ''))}</td></tr>`).join('') + '</tbody></table>';
+  });
+  $('#dsave').onclick = () => runReport($('#dsave'), 'Saving…', async () => {
+    const cells = [];
+    document.querySelectorAll('#dtab input').forEach(inp => { const [rn, r] = keys[+inp.dataset.i], v = inp.value.trim(); if (v !== text(r[2])) cells.push([rn, 3, v]); });
+    if (!cells.length) { toast('No numbers were changed.'); return; }
+    await writeTabCells('Dashboard Inputs', cells); toast(`Saved ${cells.length} dashboard number(s)`); load();
+  });
+  $('#dgo').onclick = () => runReport($('#dgo'), 'Creating…', async () => {
+    await loadData(); const inp = await tabValues('Dashboard Inputs');
+    const res = await HRAReports.dashboard(rows, inp), s = res.summary;
+    const url = URL.createObjectURL(new Blob([res.html], { type: 'text/html' }));
+    $('#dres').innerHTML = `<p class="msg-ok">Dashboard created: Sri Lanka ${s.SL} (MR ${s.MR}, PC ${s.PC}), Manila ${s.MNL}${res.warn.length ? ` · ${res.warn.length} template warning(s)` : ''}</p>
+      <div class="row-flex"><a class="btn gold" href="${url}" target="_blank" rel="noopener">Open dashboard</a><a class="btn ghost" href="${url}" download="${esc(res.name)}">Download (${esc(res.name)})</a></div>`;
+  });
+  load();
+}
+
 function saveBytes(name, bytes, type = 'application/pdf') {
   const url = URL.createObjectURL(new Blob([bytes], { type })), a = document.createElement('a');
   a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
