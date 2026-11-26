@@ -380,9 +380,9 @@ async function photoUrl(id) {
 /* ======================= menu + navigation ======================= */
 const MENUS = {
   hr: [['EMPLOYEE', [['lookup', 'Employee Lookup'], ['team', 'Team Lookup'], ['update', 'Employee Update'], ['dropbox', 'Drop Box']]],
-       ['FORMS', [['coe', 'Certificate of Employment', 2], ['confirm', 'Confirmation Letter', 2], ['promote', 'Promotion Letter', 2], ['npa', 'Notice of Personnel Action', 2],
-                  ['appraisal', 'Performance Appraisal', 2], ['ctbc', 'CTBC Bank Form', 2], ['erd', 'Relationship Disclosure (ERD)', 2], ['teambuild', 'Team Building Form', 2], ['prf', "PRF's, CA & ATD", 2]]],
-       ['REPORTS', [['resign', 'Resignation Tracker', 3]]]],
+       ['FORMS', [['coe', 'Certificate of Employment'], ['confirm', 'Confirmation Letter'], ['promote', 'Promotion Letter'], ['npa', 'Notice of Personnel Action'],
+                  ['appraisal', 'Performance Appraisal'], ['ctbc', 'CTBC Bank Form', 2], ['erd', 'Relationship Disclosure (ERD)'], ['teambuild', 'Team Building Form'], ['prf', "PRF's, CA & ATD", 2]]],
+       ['TRACKERS', [['resign', 'Resignation Tracker']]]],
 };
 document.querySelectorAll('[data-sys]').forEach(b => b.onclick = () => openSystem(b.dataset.sys));
 $('#home-btn').onclick = () => { screen('home'); };
@@ -396,7 +396,8 @@ function openSystem(sys) {
   document.querySelectorAll('.nav').forEach(b => b.onclick = () => go(b.dataset.page));
   go(sys === 'hr' ? 'lookup' : 'office');
 }
-const PAGES = { lookup: pageLookup, team: pageTeam, update: pageUpdate, dropbox: pageDropbox, };
+const PAGES = { lookup: pageLookup, team: pageTeam, update: pageUpdate, dropbox: pageDropbox,
+  coe: pageWrCoe, confirm: pageWrConfirm, promote: pageWrPromote, npa: pageWrNpa, appraisal: pageWrAppraisal, erd: pageWrErd, teambuild: pageWrTeam, resign: pageResign };
 function go(k) {
   pageKey = k; document.querySelectorAll('.nav').forEach(b => b.classList.toggle('on', b.dataset.page === k));
   const item = MENUS[system].flatMap(g => g[1]).find(i => i[0] === k);
@@ -752,11 +753,15 @@ let dropItems = [];
 function pageDropbox() {
   $('#page').innerHTML = `<div class="panel"><h2>Drop Box - update employees from files</h2><div class="body">
       <div class="drop" id="dz" tabindex="0" role="button" aria-label="Drop files here or choose files"><b>Drop files here</b>
-        <div class="muted" style="margin:6px 0 10px">Photos (.jpg .png) · Excel (.xlsx) · Word (.docx) - name each file with the employee ID, e.g. SL-1234 passport details.docx</div>
-        <span class="btn ghost">or choose files…</span><input type="file" id="fp" multiple accept=".jpg,.jpeg,.png,.xlsx,.xlsm,.docx,.doc,.xls" hidden></div></div></div>
+        <div class="muted" style="margin:6px 0 10px">Emails (.eml from Gmail ⋮ → Download message, .txt, Outlook .msg) - e.g. a resignation email updates the Master Database and Resignation Tracker after you confirm.<br>Photos (.jpg .png) · Excel (.xlsx) · Word (.docx) named with the employee ID.</div>
+        <span class="btn ghost">or choose files…</span><input type="file" id="fp" multiple accept=".eml,.txt,.msg,.jpg,.jpeg,.png,.xlsx,.xlsm,.docx,.doc,.xls" hidden></div>
+      <div class="row-flex" style="margin-top:10px"><button class="btn gold" id="dpaste">✉ Paste an email</button><span class="small muted">For Gmail / Outlook: open the email, select all, copy, then paste.</span></div></div></div>
     <div class="panel"><h2>Changes found (untick anything you do not want)</h2><div class="body" id="dlist"></div></div>
     <div class="bar"><span class="info" id="dinfo"></span><button class="btn ghost" id="dclear">Clear</button><button class="btn gold" id="dapply" disabled>Apply updates to database</button></div>`;
-  const dz = $('#dz'), add = async files => { if (!files.length) return; status('Reading files…'); dropItems = dropItems.concat(await analyse([...files])); renderDrop(); status(''); };
+  const dz = $('#dz'), add = async files => { files = [...files]; if (!files.length) return; const mails = files.filter(isEmailFile), other = files.filter(f => !isEmailFile(f));
+    if (other.length) { status('Reading files…'); dropItems = dropItems.concat(await analyse(other)); renderDrop(); status(''); }
+    if (mails.length) await handleEmails(mails); };
+  $('#dpaste').onclick = e => { e.stopPropagation(); pasteEmail(); };
   dz.onclick = () => $('#fp').click(); dz.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#fp').click(); } };
   $('#fp').onchange = e => { add(e.target.files); e.target.value = ''; };
   dz.ondragover = e => { e.preventDefault(); dz.classList.add('hot'); }; dz.ondragleave = () => dz.classList.remove('hot');
@@ -826,7 +831,7 @@ function pageAlerts() {
 }
 
 /* ======================= Forms (PDFs made in the browser; engine loads on first use) ======================= */
-window.HRA_ASSETS = window.HRA_ASSETS || 'hra-assets/';
+window.HRA_ASSETS = '../hra-assets/';            // Masterock form engine (ERD) lives one folder up
 let formsReady = null;
 function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Could not load ' + src)); document.head.appendChild(s); }); }
 function loadForms() {
@@ -934,6 +939,298 @@ function pageDashboard() {
       <div class="row-flex"><a class="btn gold" href="${url}" target="_blank" rel="noopener">Open dashboard</a><a class="btn ghost" href="${url}" download="${esc(res.name)}">Download (${esc(res.name)})</a></div>`;
   });
   load();
+}
+
+/* ======================= Drop Box: emails (resignation etc.) -> confirm pop-up -> update the chosen files ======================= */
+const TRACKER = 'Resignation Tracker';
+const TRACKER_HDR = ["COLUMN 1", "EMPLOYEE ID", "EMPLOYEE NAME", "NICKNAME", "DOJ", "LAST DAY", "NATIONALITY", "DEPARTMENT", "POSITION", "EXIT INTERVIEW SCHEDULE", "ACCESS REMOVAL", "CLEARED ACCOUNTABILITY", "REMARKS", "FINAL PAY SCHEDULE/REMARKS", "REASON OF LEAVING", "COLUMN 16", "DECLARED FULL NAME", "DECLARED NICKNAME", "DECLARED DOJ", "DECLARED LAST DAY", "DECLARED DEPARTMENT", "DECLARED POSITION"];
+const MONTHS_L = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+const isEmailFile = f => /\.(eml|txt|msg)$/i.test(f.name);
+
+/* --- read an email: .eml (MIME) / .txt / pasted text -> { from, subject, date, body } */
+function qpDecode(s) { return s.replace(/=\r?\n/g, '').replace(/=([0-9A-F]{2})/gi, (m, h) => String.fromCharCode(parseInt(h, 16))); }
+function bytesToUtf8(bin) { try { return decodeURIComponent(escape(bin)); } catch (e) { return bin; } }
+function mimeWord(s) { return String(s || '').replace(/=\?([^?]+)\?([BQ])\?([^?]*)\?=/gi, (m, cs, enc, t) => bytesToUtf8(enc.toUpperCase() === 'B' ? atob(t) : qpDecode(t.replace(/_/g, ' ')))); }
+function htmlToText(h) { const d = new DOMParser().parseFromString(h.replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|tr|li)>/gi, '\n'), 'text/html'); return d.body ? d.body.textContent : h; }
+function parseMime(raw) {
+  const split = raw.search(/\r?\n\r?\n/); const head = split < 0 ? raw : raw.slice(0, split), body = split < 0 ? '' : raw.slice(split).replace(/^\r?\n\r?\n/, '');
+  const hdrs = {}; head.replace(/\r?\n[ \t]+/g, ' ').split(/\r?\n/).forEach(l => { const i = l.indexOf(':'); if (i > 0) hdrs[l.slice(0, i).trim().toLowerCase()] = l.slice(i + 1).trim(); });
+  return { hdrs, body };
+}
+function partText(p) {
+  const ct = p.hdrs['content-type'] || 'text/plain', enc = (p.hdrs['content-transfer-encoding'] || '').toLowerCase();
+  const bm = ct.match(/boundary="?([^";]+)"?/i);
+  if (/multipart\//i.test(ct) && bm) {
+    const parts = p.body.split('--' + bm[1]).slice(1).filter(x => !x.startsWith('--')).map(x => parseMime(x.replace(/^\r?\n/, '')));
+    const plain = parts.map(partText).filter(Boolean);
+    const pref = parts.findIndex(x => /text\/plain/i.test(x.hdrs['content-type'] || '')); return pref >= 0 ? partText(parts[pref]) : (plain[0] || '');
+  }
+  if (!/text\//i.test(ct)) return '';
+  let t = enc === 'base64' ? atob(p.body.replace(/\s+/g, '')) : enc === 'quoted-printable' ? qpDecode(p.body) : p.body;
+  if (/charset="?utf-?8/i.test(ct) || enc === 'base64' || enc === 'quoted-printable') t = bytesToUtf8(t);
+  return /text\/html/i.test(ct) ? htmlToText(t) : t;
+}
+function readEmailText(raw) {
+  if (/^(from|subject|date|to|received|return-path|mime-version|message-id|delivered-to)\s*:/im.test(raw.slice(0, 4000)) && /\r?\n\r?\n/.test(raw)) {
+    const p = parseMime(raw);
+    if (p.hdrs.subject || p.hdrs.from) return { from: mimeWord(p.hdrs.from), subject: mimeWord(p.hdrs.subject), date: p.hdrs.date || '', body: partText(p).trim() };
+  }
+  const subj = (raw.match(/^\s*subject\s*:\s*(.+)$/im) || [])[1] || raw.trim().split(/\r?\n/)[0].slice(0, 150);
+  const from = (raw.match(/^\s*from\s*:\s*(.+)$/im) || [])[1] || '';
+  return { from, subject: subj.trim(), date: '', body: raw.trim() };
+}
+async function readEmailFile(f) {
+  if (/\.msg$/i.test(f.name)) {               // Outlook .msg: pull the readable text out of the file
+    const buf = new Uint8Array(await f.arrayBuffer()); let s = '', run = '';
+    for (let i = 0; i + 1 < buf.length; i += 2) { const c = buf[i] | (buf[i + 1] << 8); if ((c >= 32 && c < 0xD800) || c === 10 || c === 13 || c === 9) run += String.fromCharCode(c); else { if (run.length > 6) s += run + '\n'; run = ''; } }
+    return readEmailText(s);
+  }
+  return readEmailText(await f.text());
+}
+
+/* --- what kind of email is it, who is it about, what are the details */
+const EMAIL_TYPES = [
+  { type: 'Resignation', re: /\bresign|resignation|irrevocable|last (working |official )?day|notice period|leaving the company|tender my/i, targets: ['master', 'tracker'] },
+  { type: 'Promotion', re: /\bpromot/i, targets: ['master'] },
+  { type: 'Transfer', re: /\btransfer/i, targets: ['master'] },
+];
+const FILES = { master: 'Master Database (Employee Database)', tracker: 'Resignation Tracker', comp: 'Compensation (restricted)' };
+function parseAnyDate(s) {
+  s = String(s || '').trim(); let m;
+  if ((m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/))) return new Date(+m[1], +m[2] - 1, +m[3]);
+  if ((m = s.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/))) { const a = +m[1], b = +m[2]; return a > 12 ? new Date(+m[3], b - 1, a) : new Date(+m[3], a - 1, b); }   // PH style mm/dd unless the first number > 12
+  const mon = '(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+  if ((m = s.match(new RegExp(mon + '\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s*(\\d{4})?', 'i')))) return new Date(+(m[3] || new Date().getFullYear()), MONTHS_L.findIndex(x => x.startsWith(m[1].toLowerCase().slice(0, 3))), +m[2]);
+  if ((m = s.match(new RegExp('(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?' + mon + '\\.?,?\\s*(\\d{4})?', 'i')))) return new Date(+(m[3] || new Date().getFullYear()), MONTHS_L.findIndex(x => x.startsWith(m[2].toLowerCase().slice(0, 3))), +m[1]);
+  return null;
+}
+const ddmmyyyy = d => d ? `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` : '';
+const isoOf = d => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+function findPerson(mail) {
+  const all = `${mail.subject}\n${mail.from}\n${mail.body}`;
+  const ids = all.match(/\b[A-Z]{1,3}\d{3,5}-\d{2,5}\b/g) || [];
+  for (const id of ids) { const r = byId(id); if (r) return { r, how: 'employee ID ' + id }; }
+  const hay = ' ' + norm(`${mail.from} ${mail.subject} ${mail.body.slice(-600)}`).replace(/[^A-Z ]/g, ' ') + ' ';
+  let best = null, score = 0;
+  for (const r of rows) {
+    const first = norm(r['FIRST NAME']).split(' ')[0], last = norm(r['LAST NAME']), nick = norm(r['NICKNAME']);
+    if (!last || last.length < 2) continue;
+    let s = 0; if (hay.includes(' ' + last + ' ')) s += 2; if (first && hay.includes(' ' + first + ' ')) s += 2; if (nick && nick.length > 2 && hay.includes(' ' + nick + ' ')) s += 1;
+    if (s > score) { score = s; best = r; }
+  }
+  return score >= 4 ? { r: best, how: 'name in the email' } : null;
+}
+function analyseEmail(mail) {
+  const text = `${mail.subject}\n${mail.body}`;
+  const kind = EMAIL_TYPES.find(t => t.re.test(mail.subject)) || EMAIL_TYPES.find(t => t.re.test(text)) || { type: 'General', targets: [] };
+  let last = null;
+  const near = text.match(/(last (working |official )?day|effective|until|end(ing)? (on|of)|on or before)[^.\n]{0,60}/i);
+  if (near) last = parseAnyDate(near[0]);
+  if (!last && kind.type === 'Resignation') { const any = text.match(/(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{4}|\d{4}-\d{1,2}-\d{1,2}|[A-Za-z]{3,9}\.? \d{1,2}(st|nd|rd|th)?,? \d{4}|\d{1,2}(st|nd|rd|th)? (of )?[A-Za-z]{3,9},? \d{4})/); if (any) last = parseAnyDate(any[0]); }
+  const sent = text.replace(/\s+/g, ' ').split(/(?<=[.!?])\s/);
+  const reason = (sent.find(s => /due to|because|reason|pursue|opportunit|personal|family|health|relocat|career|further studies|abroad/i.test(s) && !/^subject/i.test(s)) || '').trim().slice(0, 250);
+  return { kind, person: findPerson(mail), last, reason };
+}
+
+/* --- the pop-up: details + "this will update ..." -> Yes / No (No = pick more files) */
+function emailPopup(mail, a) {
+  return new Promise(resolve => {
+    const m = document.createElement('div'); m.className = 'modal';
+    const pickOpts = rows.slice().sort((x, y) => norm(x['FULL NAME']).localeCompare(norm(y['FULL NAME']))).map(r => `<option value="${esc(r[ID])}" ${a.person && a.person.r === r ? 'selected' : ''}>${esc(r[ID])} · ${esc(val(r, 'FULL NAME'))}</option>`).join('');
+    const names = t => t.map(k => FILES[k]).join(' and ');
+    m.innerHTML = `<div class="box" role="dialog" aria-modal="true" style="width:min(640px,100%)"><h3>${esc(a.kind.type)} email detected</h3><div class="body">
+      <p class="small muted" style="margin-top:0">Subject: <b>${esc(mail.subject || '(none)')}</b>${mail.from ? '<br>From: ' + esc(mail.from) : ''}</p>
+      <div class="fields" style="grid-template-columns:1fr">
+        <div class="field"><label for="em-type">Type</label><select id="em-type">${['Resignation', 'Promotion', 'Transfer', 'General'].map(t => `<option ${t === a.kind.type ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+        <div class="field"><label for="em-emp">Employee ${a.person ? `<span class="pill ok">found by ${esc(a.person.how)}</span>` : '<span class="pill warn">not found - pick</span>'}</label><select id="em-emp"><option value="">— pick the employee —</option>${pickOpts}</select></div>
+        <div class="field em-res"><label for="em-last">Last day</label><input type="date" id="em-last" value="${isoOf(a.last)}"></div>
+        <div class="field em-res"><label for="em-reason">Reason of leaving</label><input id="em-reason" value="${esc(a.reason)}"></div>
+        <div class="field em-pos" hidden><label for="em-pos">New position</label><input id="em-pos"></div>
+        <div class="field em-pos" hidden><label for="em-dept">New department</label><input id="em-dept"></div>
+      </div>
+      <p id="em-msg" style="margin:14px 0 4px;font-weight:600"></p>
+      <div id="em-more" hidden><p class="small muted" style="margin:6px 0">Tick every file to update:</p>${Object.entries(FILES).map(([k, n]) => `<label style="display:block;margin:4px 0"><input type="checkbox" value="${k}"> ${esc(n)}</label>`).join('')}
+        <input id="em-other" placeholder="Other file name (noted in the tracker remarks)" style="width:100%;margin-top:6px"></div>
+      <p id="em-err" class="msg-err small"></p></div>
+      <div class="foot"><button class="btn ghost" id="em-cancel" style="margin-right:auto">Cancel</button><button class="btn ghost" id="em-no">No - add other files</button><button class="btn gold" id="em-yes">Yes - proceed</button></div></div>`;
+    document.body.appendChild(m);
+    const q = s => m.querySelector(s);
+    let targets = a.kind.targets.slice();
+    const refresh = () => {
+      const t = q('#em-type').value, res = t === 'Resignation', pos = t === 'Promotion' || t === 'Transfer';
+      m.querySelectorAll('.em-res').forEach(e => e.hidden = !res); m.querySelectorAll('.em-pos').forEach(e => e.hidden = !pos);
+      if (q('#em-more').hidden) targets = (EMAIL_TYPES.find(x => x.type === t) || { targets: [] }).targets.slice();
+      q('#em-msg').textContent = targets.length ? `This will update: ${names(targets)}. Click Yes to proceed, or No to add other files.` : 'Pick the files to update (click No).';
+      m.querySelectorAll('#em-more input[type=checkbox]').forEach(c => c.checked = targets.includes(c.value));
+    };
+    q('#em-type').onchange = refresh; refresh();
+    q('#em-no').onclick = () => { q('#em-more').hidden = false; q('#em-no').hidden = true; q('#em-yes').textContent = 'Update selected files'; refresh(); q('#em-msg').textContent = 'Tick every file to update, then click Update selected files.'; };
+    q('#em-cancel').onclick = () => { m.remove(); resolve(null); };
+    q('#em-yes').onclick = () => {
+      if (!q('#em-more').hidden) targets = [...m.querySelectorAll('#em-more input:checked')].map(c => c.value);
+      const r = byId(q('#em-emp').value);
+      if (!r) return q('#em-err').textContent = 'Pick the employee first.';
+      if (!targets.length) return q('#em-err').textContent = 'Tick at least one file.';
+      if (q('#em-type').value === 'Resignation' && !q('#em-last').value) return q('#em-err').textContent = 'Enter the last day.';
+      m.remove();
+      resolve({ type: q('#em-type').value, r, targets, last: q('#em-last').value ? new Date(q('#em-last').value + 'T00:00') : null, reason: q('#em-reason').value.trim(),
+        pos: q('#em-pos').value.trim(), dept: q('#em-dept').value.trim(), other: (q('#em-other').value || '').trim() });
+    };
+  });
+}
+
+/* --- write to the chosen files */
+async function applyEmail(mail, d) {
+  const done = [], hdrIdx = h => hdr.indexOf(norm(h)), col = h => colLetter(hdrIdx(h));
+  const masterCells = [];
+  if (d.targets.includes('master')) {
+    if (d.type === 'Resignation') { masterCells.push([d.r._row, hdrIdx('STATUS') + 1, 'RESIGNED'], [d.r._row, hdrIdx('LAST DAY') + 1, ddmmyyyy(d.last)]); }
+    if ((d.type === 'Promotion' || d.type === 'Transfer')) { if (d.pos) masterCells.push([d.r._row, hdrIdx('POSITION') + 1, d.pos]); if (d.dept) masterCells.push([d.r._row, hdrIdx('DEPARTMENT') + 1, d.dept]); }
+    if (masterCells.some(c => c[1] <= 0)) throw new Error('The Employee Database is missing a STATUS / LAST DAY / POSITION column.');
+    if (masterCells.length) { await writeTabCells(TAB, masterCells); done.push(FILES.master); }
+  }
+  if (d.targets.includes('tracker')) {
+    const nm =[val(d.r, 'FIRST NAME'), val(d.r, 'MIDDLE NAME'), val(d.r, 'LAST NAME')].filter(Boolean).join(' ') || val(d.r, 'FULL NAME');
+    const map = { 'EMPLOYEE ID': d.r[ID], 'EMPLOYEE NAME': nm, 'NICKNAME': val(d.r, 'NICKNAME'), 'LAST DAY': ddmmyyyy(d.last), 'DEPARTMENT': val(d.r, 'DEPARTMENT'),
+      'POSITION': val(d.r, 'POSITION'), 'REASON OF LEAVING': d.reason, 'REMARKS': `From email: ${mail.subject}${d.other ? ' · also update: ' + d.other : ''}` };
+    const month = d.last ? `${MONTHS_L[d.last.getMonth()].toUpperCase()} ${d.last.getFullYear()}` : '';
+    const row = [month].concat(TRACKER_HDR.map(h => map[h] ?? ''));
+    await api(sheetUrl(SHEET_ID, `'${TRACKER}'!A1:${colLetter(row.length - 1)}`) + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: JSON.stringify({ values: [row] }) });
+    done.push(FILES.tracker);
+  }
+  if (d.targets.includes('comp')) done.push(FILES.comp + ' (nothing to change for this email)');
+  await loadData();
+  return done;
+}
+async function handleEmails(sources) {
+  for (const src of sources) {
+    const mail = typeof src === 'string' ? readEmailText(src) : await readEmailFile(src);
+    if (!mail.body && !mail.subject) { toast('Could not read ' + (src.name || 'the pasted text')); continue; }
+    const choice = await emailPopup(mail, analyseEmail(mail));
+    if (!choice) continue;
+    try { status('Updating…'); const done = await applyEmail(mail, choice); status('');
+      await modal('Updated', `<p>${esc(choice.type)} for <b>${esc(choice.r[ID])} ${esc(val(choice.r, 'FULL NAME'))}</b> saved to:</p><ul>${done.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`, [['OK', 'gold', 1]]); }
+    catch (e) { status(''); if (e.message !== 'signed out') await modal('Not saved', esc(e.message), [['OK', 'gold', 1]]); }
+  }
+}
+function pasteEmail() {
+  modal('Paste an email', `<p class="small muted">Copy the whole email (subject, sender and message) and paste it here.</p><textarea id="em-paste" rows="12" style="width:100%"></textarea>`, [['Cancel', 'ghost', 0], ['Read email', 'gold', 1]]);
+  const t = document.querySelector('#em-paste'); t.focus();
+  const okBtn = [...document.querySelectorAll('.modal .btn.gold')].pop(), text = () => t.value;
+  okBtn.onclick = () => { const v = text(); okBtn.closest('.modal').remove(); if (v.trim()) handleEmails([v]); };
+}
+
+/* ======================= Resignation Tracker page ======================= */
+function pageResign() {
+  $('#page').innerHTML = `<div class="panel"><h2>Resignation Tracker</h2><div class="body"><div class="row-flex">
+      <input class="search" id="rq" placeholder="Search name, ID, department, reason…" style="flex:1 1 240px"><select id="rm" style="flex:0 1 200px"></select><button class="btn ghost" id="rrel">Reload</button></div>
+      <p class="small muted" id="rcount">Loading…</p><p class="small muted">Drop a resignation email in <b>Drop Box</b> to add a row here and update the Master Database.</p></div></div>
+    <div class="panel"><div class="body" style="overflow:auto;max-height:70vh" id="rtab"></div></div>`;
+  let H = [], data = [];
+  const show = () => {
+    const q = norm($('#rq').value), mo = $('#rm').value;
+    const list = data.filter(r => (!q || norm(r.join(' ')).includes(q)) && (!mo || r[0] === mo));
+    const cols = H.map((h, i) => [h, i]).filter(([h]) => h && !/^COLUMN \d+$/.test(h));
+    $('#rtab').innerHTML = `<table><thead><tr>${cols.map(([h]) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${list.slice().reverse().map(r => `<tr>${cols.map(([, i]) => `<td>${esc(r[i] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    $('#rcount').textContent = `${list.length} of ${data.length} row(s) · newest first`;
+  };
+  const load = async () => {
+    try { const v = (await (await api(sheetUrl(SHEET_ID, `'${TRACKER}'`))).json()).values || [];
+      H = (v[0] || []).map(String); data = v.slice(1).filter(r => r.some(x => String(x || '').trim()));
+      const months = [...new Set(data.map(r => r[0]).filter(Boolean))];
+      $('#rm').innerHTML = `<option value="">All months</option>` + months.slice().reverse().map(m => `<option>${esc(m)}</option>`).join(''); show(); }
+    catch (e) { if (e.message !== 'signed out') $('#rcount').textContent = 'Could not load the tracker: ' + e.message; }
+  };
+  $('#rq').oninput = show; $('#rm').onchange = show; $('#rrel').onclick = load; load();
+}
+
+/* ======================= Whiterain Phase 2: forms ======================= */
+let wrReady = null;
+function wrLoad() {
+  if (!wrReady) wrReady = (async () => {
+    await loadForms();                                            // pdf-lib + JSZip + Masterock engine (for the ERD)
+    status('Loading the Whiterain forms…');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js');
+    await loadScript('wr-forms.js?v=1'); status('');
+  })().catch(e => { wrReady = null; throw e; });
+  return wrReady;
+}
+async function wrRun(btn, fn) {
+  const old = btn.textContent; btn.disabled = true; btn.textContent = 'Creating…';
+  try { await wrLoad(); const res = await fn(); saveBytes(res.name, res.bytes, res.name.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream'); toast('Saved ' + res.name); }
+  catch (e) { console.error(e); if (e.message !== 'signed out') modal('Something went wrong', esc(e.message), [['OK', 'gold', 1]]); }
+  finally { btn.disabled = false; btn.textContent = old; status(''); }
+}
+const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+/* fields: [id, label, type, default, extra]; type: text | date | money | select | textarea | check */
+function wrFields(list) {
+  return `<div class="fields">` + list.map(([id, label, type, def, extra]) => {
+    const v = esc(def ?? '');
+    let ctl;
+    if (type === 'select') ctl = `<select id="${id}">${extra.map(o => `<option ${o === def ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+    else if (type === 'textarea') ctl = `<textarea id="${id}" rows="5" placeholder="${esc(extra || '')}">${v}</textarea>`;
+    else if (type === 'checks') ctl = `<div id="${id}" class="row-flex">${extra.map(o => `<label class="small"><input type="checkbox" value="${esc(o)}"> ${esc(o)}</label>`).join('')}</div>`;
+    else ctl = `<input id="${id}" type="${type === 'date' ? 'date' : 'text'}" value="${v}" ${type === 'money' ? 'inputmode="decimal"' : ''} placeholder="${esc(extra || '')}">`;
+    return `<div class="field"><label for="${id}">${esc(label)}</label>${ctl}</div>`;
+  }).join('') + `</div>`;
+}
+const fv = id => { const el = $('#' + id); if (!el) return ''; if (el.tagName === 'DIV') return [...el.querySelectorAll('input:checked')].map(i => i.value); return el.value.trim(); };
+function wrFormPage(title, blurb, fields, onLoad, make) {
+  const row = formPage(title, `<div class="panel"><h2>Form details</h2><div class="body">${wrFields(fields)}<p class="small muted" style="margin-top:10px">${blurb}</p></div></div>`,
+    `<button class="btn gold" id="go">Create ${esc(title)}</button>`, r => onLoad && onLoad(r));
+  $('#go').onclick = () => wrRun($('#go'), () => make(row()));
+}
+const setIf = (id, v) => { const el = $('#' + id); if (el && v !== undefined && v !== null) el.value = v; };
+const MRMS = ['Ms.', 'Mr.'];
+function pageWrCoe() {
+  wrFormPage('Certificate of Employment', 'Filled from the database: name, position and basic salary. Check the join date, salary and purpose before printing.',
+    [['title', 'Mr / Ms', 'select', 'Ms.', MRMS], ['position', 'Position', 'text'], ['join', 'Employed since', 'date'], ['salary', 'Monthly salary (Php)', 'money'],
+     ['deminimis', 'Deminimis allowance (Php)', 'money'], ['purpose', 'Issued for', 'text', 'travel purposes'], ['issue', 'Date issued', 'date', todayIso()], ['signatory', 'Signed by (name)', 'text', 'Kevin Fan']],
+    r => { setIf('position', val(r, 'POSITION')); setIf('salary', val(r, 'CURRENT BASIC SALARY')); },
+    r => WRForms.coe(r, { title: fv('title'), position: fv('position'), join: fv('join'), salary: fv('salary'), deminimis: fv('deminimis'), purpose: fv('purpose'), issue: fv('issue'), signatory: fv('signatory') }));
+}
+function pageWrConfirm() {
+  wrFormPage('Confirmation Letter', 'Confirmation of service (probation → confirmed). The employee signs the acceptance at the bottom.',
+    [['title', 'Mr / Ms', 'select', 'Ms.', MRMS], ['date', 'Letter date', 'date', todayIso()], ['probation', 'Probation started', 'date'], ['effective', 'Confirmed effective', 'date']],
+    null, r => WRForms.confirmation(r, { title: fv('title'), date: fv('date'), probation: fv('probation'), effective: fv('effective') }));
+}
+function pageWrPromote() {
+  wrFormPage('Promotion Letter', 'New position and salary are confidential - the letter says so.',
+    [['title', 'Mr / Ms', 'select', 'Mr.', MRMS], ['date', 'Letter date', 'date', todayIso()], ['newPosition', 'New position', 'text'], ['department', 'Department', 'text'],
+     ['newSalary', 'New monthly basic (Php)', 'money'], ['effective', 'Effective date', 'date'], ['signatory', 'Signed by', 'text', 'Kevin Fan'], ['signatoryTitle', 'Signatory title', 'text', 'HR Manager']],
+    r => { setIf('newPosition', val(r, 'POSITION')); setIf('department', val(r, 'DEPARTMENT')); },
+    r => WRForms.promotion(r, { title: fv('title'), date: fv('date'), newPosition: fv('newPosition'), department: fv('department'), newSalary: fv('newSalary'), effective: fv('effective'), signatory: fv('signatory'), signatoryTitle: fv('signatoryTitle') }));
+}
+function pageWrNpa() {
+  wrFormPage('Notice of Personnel Action', 'Current details come from the database (edit if needed). Approvals and payroll boxes stay blank for signing.',
+    [['actions', 'Nature of action', 'checks', '', ['Conversion to Regular', 'Merit Increase', 'Reclassification', 'Promotion', 'Transfer', 'Others']], ['otherText', 'If Others, specify', 'text'],
+     ['join', 'Joined date', 'date'], ['effective', 'Action effective date', 'date'],
+     ['curPosition', 'Current position', 'text'], ['newPosition', 'Proposed position', 'text'], ['curDept', 'Current department', 'text'], ['newDept', 'Proposed department', 'text'],
+     ['curBasic', 'Current basic pay', 'money'], ['newBasic', 'Proposed basic pay', 'money'], ['curDem', 'Current deminimis', 'money'], ['newDem', 'Proposed deminimis', 'money'],
+     ['remarks', 'Remarks', 'textarea']],
+    r => { setIf('curPosition', val(r, 'POSITION')); setIf('newPosition', val(r, 'POSITION')); setIf('curDept', val(r, 'DEPARTMENT')); setIf('newDept', val(r, 'DEPARTMENT')); setIf('curBasic', val(r, 'CURRENT BASIC SALARY')); },
+    r => WRForms.npa(r, { actions: fv('actions'), otherText: fv('otherText'), join: fv('join'), effective: fv('effective'), curPosition: fv('curPosition'), newPosition: fv('newPosition'),
+      curDept: fv('curDept'), newDept: fv('newDept'), curBasic: fv('curBasic'), newBasic: fv('newBasic'), curDem: fv('curDem'), newDem: fv('newDem'), remarks: fv('remarks') }));
+}
+function pageWrAppraisal() {
+  wrFormPage('Performance Appraisal', 'Scores are left blank for the reviewer; the weighted totals calculate in Excel.',
+    [['position', 'Position', 'text'], ['department', 'Department', 'text'], ['reviewType', 'Type of review', 'select', 'Probationary', ['Probationary', 'Annual', 'Mid-year', 'Promotion', 'Others']], ['period', 'Review period', 'text', '', 'e.g. Jan - Jun 2026']],
+    r => { setIf('position', val(r, 'POSITION')); setIf('department', val(r, 'DEPARTMENT')); },
+    r => WRForms.appraisal(r, { position: fv('position'), department: fv('department'), reviewType: fv('reviewType'), period: fv('period') }));
+}
+function pageWrErd() {
+  wrFormPage('Relationship Disclosure (ERD)', 'Section 1 is filled in; the employee ticks the relationship boxes and signs.',
+    [['position', 'Position', 'text'], ['department', 'Department', 'text'], ['join', 'Date of joining', 'date']],
+    r => { setIf('position', val(r, 'POSITION')); setIf('department', val(r, 'DEPARTMENT')); },
+    r => WRForms.erd(r, { position: fv('position'), department: fv('department'), join: fv('join') }));
+}
+function pageWrTeam() {
+  wrFormPage('Team Building Form', 'Pick the requestor (payee) above. Creates both sheets: Cash Advance Request and Payroll Deduction Authorization.',
+    [['department', 'Department / team', 'text'], ['quarter', 'Quarter', 'select', 'Q1', ['Q1', 'Q2', 'Q3', 'Q4']], ['amount', 'Amount (Php)', 'money'],
+     ['from', 'Activity from', 'date'], ['to', 'Activity to', 'date'], ['received', 'Date received', 'date'], ['liquidate', 'Liquidate by', 'date'],
+     ['members', 'Team members (one per line)', 'textarea', '', 'Juan Dela Cruz\nMaria Santos']],
+    r => setIf('department', val(r, 'DEPARTMENT')),
+    r => WRForms.teamBuilding(r, { department: fv('department'), quarter: fv('quarter'), amount: fv('amount'), from: fv('from'), to: fv('to'), received: fv('received'), liquidate: fv('liquidate'), members: fv('members') }));
 }
 
 function saveBytes(name, bytes, type = 'application/pdf') {
