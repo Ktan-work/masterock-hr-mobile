@@ -1,0 +1,29 @@
+Phone sign-in fix (Masterock) + new Whiterain HRA web app - setup steps
+=========================================================================
+
+STEP 1 - allow the phone sign-in (one time, Google Cloud)
+  1. Open https://console.cloud.google.com/auth/clients?project=masterock-hr-514313  (signed in as ktan6689)
+  2. Click the web client "Masterock HR Mobile".
+  3. Under "Authorized redirect URIs" click "+ Add URI" twice and enter:
+       https://ktan-work.github.io/masterock-hr-mobile/web/
+       https://ktan-work.github.io/masterock-hr-mobile/web/whiterain/
+  4. Click Save. (Takes up to 5 minutes to work.)
+
+STEP 2 - upload
+  1. Open https://github.com/Ktan-work/masterock-hr-mobile/upload/main/web
+  2. From HR Automation App\web drag in: index.html, hra.html and the whole "whiterain" folder.
+  3. Commit changes. Wait 1-2 minutes.
+  Links:  Masterock  https://ktan-work.github.io/masterock-hr-mobile/web/
+          Whiterain  https://ktan-work.github.io/masterock-hr-mobile/web/whiterain/
+
+STEP 3 - give someone access (repeat per person)
+  a. Google Cloud: https://console.cloud.google.com/auth/audience?project=masterock-hr-514313
+     -> "Test users" -> "+ Add users" -> their Gmail address -> Save.   (up to 100 people)
+  b. Google Drive: share the database with them as Editor:
+       Masterock team -> "Masterock HR Database"
+       Whiterain team -> "Whiterain HR Database" (Drive folder "Whiterain HR")
+     Salary group only -> also share the matching "... Compensation (restricted)" sheet.
+  c. Send them the link. Each time they sign in, a 4-digit PIN is emailed to you -
+     pass it to them only if you approve.
+
+On phones: open the link in Chrome (Android) or Safari (iPhone), not inside Telegram/Messenger.
