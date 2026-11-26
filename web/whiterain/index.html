@@ -381,7 +381,7 @@ async function photoUrl(id) {
 const MENUS = {
   hr: [['EMPLOYEE', [['lookup', 'Employee Lookup'], ['team', 'Team Lookup'], ['update', 'Employee Update'], ['dropbox', 'Drop Box']]],
        ['FORMS', [['coe', 'Certificate of Employment'], ['confirm', 'Confirmation Letter'], ['promote', 'Promotion Letter'], ['npa', 'Notice of Personnel Action'],
-                  ['appraisal', 'Performance Appraisal'], ['ctbc', 'CTBC Bank Form', 2], ['erd', 'Relationship Disclosure (ERD)'], ['teambuild', 'Team Building Form'], ['prf', "PRF's, CA & ATD", 2]]],
+                  ['appraisal', 'Performance Appraisal'], ['ctbc', 'CTBC Bank Form'], ['erd', 'Relationship Disclosure (ERD)'], ['teambuild', 'Team Building Form'], ['prf', "PRF's, CA & ATD 🔒"]]],
        ['TRACKERS', [['resign', 'Resignation Tracker']]]],
 };
 document.querySelectorAll('[data-sys]').forEach(b => b.onclick = () => openSystem(b.dataset.sys));
@@ -397,7 +397,7 @@ function openSystem(sys) {
   go(sys === 'hr' ? 'lookup' : 'office');
 }
 const PAGES = { lookup: pageLookup, team: pageTeam, update: pageUpdate, dropbox: pageDropbox,
-  coe: pageWrCoe, confirm: pageWrConfirm, promote: pageWrPromote, npa: pageWrNpa, appraisal: pageWrAppraisal, erd: pageWrErd, teambuild: pageWrTeam, resign: pageResign };
+  coe: pageWrCoe, confirm: pageWrConfirm, promote: pageWrPromote, npa: pageWrNpa, appraisal: pageWrAppraisal, erd: pageWrErd, teambuild: pageWrTeam, resign: pageResign, ctbc: pageWrCtbc, prf: pageWrPrf };
 function go(k) {
   pageKey = k; document.querySelectorAll('.nav').forEach(b => b.classList.toggle('on', b.dataset.page === k));
   const item = MENUS[system].flatMap(g => g[1]).find(i => i[0] === k);
@@ -1151,7 +1151,7 @@ function wrLoad() {
     await loadForms();                                            // pdf-lib + JSZip + Masterock engine (for the ERD)
     status('Loading the Whiterain forms…');
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js');
-    await loadScript('wr-forms.js?v=1'); status('');
+    await loadScript('wr-forms.js?v=2'); status('');
   })().catch(e => { wrReady = null; throw e; });
   return wrReady;
 }
@@ -1224,6 +1224,59 @@ function pageWrErd() {
     r => { setIf('position', val(r, 'POSITION')); setIf('department', val(r, 'DEPARTMENT')); },
     r => WRForms.erd(r, { position: fv('position'), department: fv('department'), join: fv('join') }));
 }
+function pageWrCtbc() {
+  wrFormPage('CTBC Bank Form', 'Fills the name, title, nationality, employer and position on the specimen card, client information file and card application. Everything else is completed by the employee.',
+    [['title', 'Mr / Ms / Mrs', 'select', 'Ms.', ['Ms.', 'Mr.', 'Mrs.']], ['nationality', 'Nationality', 'text', 'FILIPINO'], ['position', 'Job position', 'text'], ['company', 'Employer', 'select', 'WR', Object.keys(WRFormsCompanies)]],
+    r => { setIf('position', val(r, 'POSITION')); setIf('nationality', val(r, 'TYPE (EXPAT / LOCAL)') === 'EXPAT' ? '' : 'FILIPINO'); },
+    r => WRForms.ctbc(r, { title: fv('title'), nationality: fv('nationality'), position: fv('position'), company: fv('company') }));
+}
+/* ---------- PRF / CA / ATD: fixed passcode + template from the private Drive folder */
+const PRF_FILE = '16ye3kM4IMtMcwBpl0TxX-_xP2b14-qsl', PRF_HASH = '8a242f711d18ce2a90dc1436a03bdab3205f0d140cfaedb005791a8fd7d99e36';
+async function prfUnlock() {
+  try { if (sessionStorage.getItem('wrPrf') === PRF_HASH) return true; } catch (e) {}
+  const ok = await new Promise(resolve => {
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = `<div class="box" role="dialog" aria-modal="true"><h3>PRF passcode</h3><div class="body"><p>Enter the PRF passcode.</p>
+      <input class="code" id="prfpc" type="password" inputmode="numeric" maxlength="12" autocomplete="off" aria-label="PRF passcode"><p id="prfmsg" class="small msg-err"></p></div>
+      <div class="foot"><button class="btn ghost" id="prfno">Cancel</button><button class="btn gold" id="prfok">Open</button></div></div>`;
+    document.body.appendChild(m); const inp = m.querySelector('#prfpc'); inp.focus(); let tries = 0;
+    const tryIt = async () => { if (await sha('wr-prf:' + inp.value.trim()) === PRF_HASH) { m.remove(); resolve(true); }
+      else { inp.value = ''; m.querySelector('#prfmsg').textContent = ++tries >= 5 ? 'Too many wrong tries.' : 'Wrong passcode.'; if (tries >= 5) { m.remove(); resolve(false); } } };
+    m.querySelector('#prfok').onclick = tryIt; inp.onkeydown = e => { if (e.key === 'Enter') tryIt(); };
+    m.querySelector('#prfno').onclick = () => { m.remove(); resolve(false); };
+  });
+  if (ok) try { sessionStorage.setItem('wrPrf', PRF_HASH); } catch (e) {}
+  return ok;
+}
+async function pageWrPrf() {
+  $('#page').innerHTML = '<div class="panel"><h2>PRF\'s, CA & ATD</h2><div class="body"><div class="spin"></div></div></div>';
+  if (!(await prfUnlock())) { $('#page').innerHTML = '<div class="panel"><h2>PRF\'s, CA & ATD</h2><div class="body"><div class="soon"><b>Locked</b>This page needs the PRF passcode.</div></div></div>'; return; }
+  const names = rows.map(r => [val(r, 'FIRST NAME'), val(r, 'LAST NAME')].filter(Boolean).join(' ')).filter(Boolean);
+  const item = i => `<tr><td><input id="it${i}d" type="date"></td><td><input id="it${i}n" placeholder="Inv no."></td><td><input id="it${i}t" placeholder="Particulars" style="width:100%"></td><td><input id="it${i}a" inputmode="decimal" placeholder="0.00"></td></tr>`;
+  $('#page').innerHTML = `<datalist id="emps">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+    <div class="panel"><h2>Payment Request Form (PRF)</h2><div class="body">${wrFields([['company', 'Company', 'select', 'WR', Object.keys(WRFormsCompanies)], ['prfNo', 'PRF no.', 'text'], ['date', 'Date', 'date', todayIso()],
+      ['payee', 'Payable to', 'text', '', 'Name or supplier'], ['pprNo', 'PPR no.', 'text']])}
+      <div class="tbl-wrap" style="margin-top:10px;max-height:none"><table><thead><tr><th>Inv date</th><th>Inv no.</th><th>Particulars</th><th>Amount</th></tr></thead><tbody>${[0, 1, 2, 3, 4, 5, 6].map(item).join('')}</tbody></table></div>
+      ${wrFields([['previous', 'Total from previous request', 'money'], ['comment', 'Comment re: difference from previous request', 'text'], ['preparedBy', 'Prepared by', 'text'], ['department', 'Department', 'text'], ['approvedBy', 'Approved by', 'text', 'Kevin Fan']])}</div></div>
+    <div class="panel"><h2>Cash Advance (CA) + Authority to Deduct (ATD)</h2><div class="body">
+      <div class="row-flex" style="margin-bottom:8px"><label><input type="checkbox" id="caOn"> Fill the Cash Advance form</label><label><input type="checkbox" id="atdOn"> Fill the Authority to Deduct (uses the CA payee + amount)</label></div>
+      ${wrFields([['caPayee', 'Payee (employee)', 'text'], ['caId', 'Employee ID', 'text'], ['caDept', 'Department', 'text'], ['caPurpose', 'Business purpose', 'text'], ['caFrom', 'Activity from', 'date'], ['caTo', 'Activity to', 'date'],
+        ['caLiquidate', 'Expected date to liquidate', 'date'], ['caParticulars', 'Particulars', 'text'], ['caAmount', 'Amount (Php)', 'money'], ['caPrevious', 'Previous request (n/a if none)', 'text', 'N/A'], ['caComment', 'Comment', 'text'], ['caCheckedBy', 'Checked by', 'text']])}</div></div>
+    <div class="bar"><span class="info">Template: Whiterain HR folder in Google Drive (private)</span><button class="btn gold" id="go">Create PRF workbook (Excel)</button></div>`;
+  ['payee', 'caPayee'].forEach(id => $('#' + id).setAttribute('list', 'emps'));
+  $('#caPayee').onchange = () => { const r = rows.find(x => norm([val(x, 'FIRST NAME'), val(x, 'LAST NAME')].join(' ')) === norm($('#caPayee').value)); if (r) { setIf('caId', r[ID]); if (!fv('caDept')) setIf('caDept', val(r, 'DEPARTMENT')); } };
+  $('#go').onclick = () => wrRun($('#go'), async () => {
+    let tpl;
+    try { tpl = await (await api(`https://www.googleapis.com/drive/v3/files/${PRF_FILE}?alt=media`)).arrayBuffer(); }
+    catch (e) { if (e.status === 403 || e.status === 404) throw new Error("You don't have access to the PRF template - ask Kevin to share the Whiterain HR folder in Google Drive with you."); throw e; }
+    const items = [0, 1, 2, 3, 4, 5, 6].map(i => ({ date: fv(`it${i}d`), no: fv(`it${i}n`), text: fv(`it${i}t`), amount: fv(`it${i}a`) }));
+    return WRForms.prf(tpl, { company: fv('company'), prfNo: fv('prfNo'), date: fv('date'), payee: fv('payee'), pprNo: fv('pprNo'), items, previous: fv('previous'), comment: fv('comment'),
+      preparedBy: fv('preparedBy'), department: fv('department'), approvedBy: fv('approvedBy'), ca: $('#caOn').checked, atd: $('#atdOn').checked,
+      caPayee: fv('caPayee'), caId: fv('caId'), caDept: fv('caDept'), caPurpose: fv('caPurpose'), caFrom: fv('caFrom'), caTo: fv('caTo'), caLiquidate: fv('caLiquidate'),
+      caParticulars: fv('caParticulars'), caAmount: fv('caAmount'), caPrevious: fv('caPrevious'), caComment: fv('caComment'), caCheckedBy: fv('caCheckedBy') });
+  });
+}
+const WRFormsCompanies = { WR: 1, MQ: 1, AQ: 1, GS: 1, GP: 1, AP: 1 };
 function pageWrTeam() {
   wrFormPage('Team Building Form', 'Pick the requestor (payee) above. Creates both sheets: Cash Advance Request and Payroll Deduction Authorization.',
     [['department', 'Department / team', 'text'], ['quarter', 'Quarter', 'select', 'Q1', ['Q1', 'Q2', 'Q3', 'Q4']], ['amount', 'Amount (Php)', 'money'],

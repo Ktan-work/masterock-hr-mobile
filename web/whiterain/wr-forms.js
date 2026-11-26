@@ -41,7 +41,7 @@ async function docx(template, tokens) {
 const NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 const colNum = c => [...c].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0);
 async function xlsx(template, fn) {
-  const zip = await JSZip.loadAsync(await fetchBuf(template)), P = new DOMParser(), S = new XMLSerializer();
+  const zip = await JSZip.loadAsync(typeof template === 'string' ? await fetchBuf(template) : template), P = new DOMParser(), S = new XMLSerializer();
   const wbx = P.parseFromString(await zip.file('xl/workbook.xml').async('string'), 'application/xml');
   const rels = P.parseFromString(await zip.file('xl/_rels/workbook.xml.rels').async('string'), 'application/xml');
   const target = id => [...rels.getElementsByTagName('Relationship')].find(r => r.getAttribute('Id') === id).getAttribute('Target').replace(/^\/?(xl\/)?/, 'xl/');
@@ -147,5 +147,73 @@ async function erd(r, o) {
   if (res.errs.length) throw new Error(res.errs.join('\n'));
   return { name: safe(`ERD ${r['EMPLOYEE ID']} ${n.natural}`) + '.pdf', bytes: res.files[0].bytes };
 }
-window.WRForms = { names, coe, confirmation, promotion, npa, appraisal, teamBuilding, erd, longDate, NPA_ACTIONS: Object.keys(NPA_TICK) };
+/* ---------- PRF / CA / ATD (template comes from the private Drive folder, passed in as bytes) */
+const COMPANIES = { WR: ['WHITERAIN DIGITAL TECHNOLOGIES INC.', '20/F, Zuellig Building Makati Ave. cor. Paseo de Roxas,', 'Makati City, Philippines'],
+  MQ: ['MARQUEE HOLDINGS, LTD.', '28/F, Zuellig Building Makati Ave. cor. Paseo de Roxas,', 'Makati City, Philippines'],
+  AQ: ['AQUOZ SOLUTIONS INC.', '28/F, Zuellig Building Makati Ave. cor. Paseo de Roxas,', 'Makati City, Philippines 1226'],
+  GS: ['GLOW SPARK TECHNOLOGIES INC.', '37/F LKG Tower 6801 Ayala Avenue Bell Air 1209', 'Makati NCR, Fourth District Philippines'],
+  GP: ['GAMEPLAY INTEACTIVE LIMITED', '28th floor, Zuellig building, Paseo De Roxas cor. Makati Ave', 'Bel-Air, Makati City'],
+  AP: ['APRICUS TECHNOLOGY INC.', '8/F Aguirre Bldg, 107 Legaspi Vill., San Lorenzo', 'Makati City 1223'] };
+function words(n) {                                   // 26847 -> "Twenty-Six Thousand Eight Hundred Forty-Seven"
+  const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const t = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const h = x => [x >= 100 ? a[Math.floor(x / 100)] + ' Hundred' : '', x % 100 < 20 ? a[x % 100] : t[Math.floor(x % 100 / 10)] + (x % 10 ? '-' + a[x % 10] : '')].filter(Boolean).join(' ');
+  if (!n) return 'Zero'; const out = []; [[1e9, 'Billion'], [1e6, 'Million'], [1e3, 'Thousand'], [1, '']].forEach(([v, w]) => { const k = Math.floor(n / v) % 1000; if (k) out.push(h(k) + (w ? ' ' + w : '')); });
+  return out.join(' ');
+}
+function pesoWords(v) { const n = num(v) || 0, w = Math.floor(n), c = Math.round((n - w) * 100); return `${words(w)} Pesos${c ? ' and ' + words(c) + ' Centavos' : ''} Only`; }
+async function prf(templateBytes, o) {
+  const [cn, a1, a2] = COMPANIES[o.company] || COMPANIES.WR;
+  const bytes = await xlsx(templateBytes, wb => {
+    const p = wb.getWorksheet('PRF'), c = wb.getWorksheet('CA'), t = wb.getWorksheet('ATD');
+    setv(p, 'L1', o.prfNo); setv(p, 'M1', (o.company || 'WR').toLowerCase()); setv(p, 'I3', cn); setv(p, 'I4', a1); setv(p, 'I5', a2);
+    setv(p, 'H7', longDate(o.date)); setv(p, 'B8', o.payee); setv(p, 'H8', o.pprNo);
+    [11, 13, 14, 15, 16, 17, 18].forEach((row, i) => { const it = o.items[i] || {}; setv(p, 'B' + row, longDate(it.date) || it.date || ''); setv(p, 'C' + row, it.no || ''); setv(p, 'D' + row, it.text || ''); setv(p, 'I' + row, num(it.amount)); });
+    setv(p, 'D21', num(o.previous) ?? o.previous); setv(p, 'B26', o.comment); setv(p, 'B31', o.preparedBy); setv(p, 'H31', o.approvedBy); setv(p, 'C33', o.department);
+    if (o.ca) {
+      setv(c, 'H3', cn); setv(c, 'H4', a1); setv(c, 'H5', a2);
+      setv(c, 'B7', o.caPayee); setv(c, 'B8', o.caDept); setv(c, 'B9', o.caId); setv(c, 'B11', o.caPurpose);
+      setv(c, 'C12', longDate(o.caFrom)); setv(c, 'F12', longDate(o.caTo)); setv(c, 'D14', longDate(o.caLiquidate));
+      setv(c, 'A17', o.caParticulars); setv(c, 'H17', num(o.caAmount)); setv(c, 'D28', o.caPrevious || 'N/A'); setv(c, 'A33', o.caComment);
+      setv(c, 'A41', o.preparedBy); setv(c, 'D41', o.caCheckedBy); setv(c, 'G41', o.approvedBy); setv(c, 'B42', o.caDept);
+    }
+    if (o.atd && o.caPayee) {
+      setv(t, 'A7', `          I, ${o.caPayee}, authorizes ${titleCo(cn)} to deduct the advances I claimed in case of failure to liquidate within the period specified in the amount of ${pesoWords(o.caAmount)}  (Php ${money(o.caAmount)})\n`);
+      setv(t, 'A8', `          It is understood that the authority shall continue to be in effect for as I am employed with ${titleCo(cn)} or in the event of my resignation, the remaining amount shall be deducted from my last pay.\n`);
+      setv(t, 'A10', `EMPLOYEE CONFORME:                    ${o.caPayee}        .           \n`);
+    }
+  });
+  return { name: safe(`PRF ${o.prfNo || ''} ${o.payee || o.caPayee || ''} ${o.date || ''}`) + '.xlsx', bytes };
+}
+const titleCo = s => s.toLowerCase().replace(/\b([a-z])/g, m => m.toUpperCase()).replace(/\bInc\b/, 'Inc').replace(/\bLtd\b/, 'Ltd');
+/* ---------- CTBC bank account opening (scanned pages: text placed at measured spots, y measured from the top, A4 595 x 842) */
+async function ctbc(r, o) {
+  const n = names(r), { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const doc = await PDFDocument.load(await fetchBuf('CTBC.pdf')), f = await doc.embedFont(StandardFonts.Helvetica), fb = await doc.embedFont(StandardFonts.HelveticaBold);
+  const ink = rgb(0.05, 0.1, 0.45);
+  const put = (p, x, y, s, size = 9, font = f, maxw = 0) => { s = String(s || '').trim().replace(/[^\x20-\x7E -ÿ]/g, ''); if (!s) return; const pg = doc.getPage(p - 1); let sz = size;
+    if (maxw) while (sz > 5 && font.widthOfTextAtSize(s, sz) > maxw) sz -= 0.25;
+    if (maxw && font.widthOfTextAtSize(s, sz) > maxw) {               // still too long: two lines
+      const words = s.split(' '); let a = ''; while (words.length && font.widthOfTextAtSize((a + ' ' + words[0]).trim(), sz) <= maxw) a = (a + ' ' + words.shift()).trim();
+      pg.drawText(a, { x, y: 842 - y + sz * 0.55, size: sz, font, color: ink }); pg.drawText(words.join(' '), { x, y: 842 - y - sz * 0.6, size: sz, font, color: ink }); return; }
+    pg.drawText(s, { x, y: 842 - y, size: sz, font, color: ink }); };
+  const tick = (p, x, y) => put(p, x, y, 'X', 9, fb);
+  const [cn, a1, a2] = COMPANIES[o.company] || COMPANIES.WR, addr = `${a1} ${a2}`.replace(/\s+/g, ' ');
+  const lastFirstMid = `${up(n.last)}, ${up(n.first)}${n.middle ? ' ' + up(n.middle) : ''}`, ms = o.title === 'Ms.';
+  // page 1 - specimen signature card
+  put(1, 14, 318, lastFirstMid, 10); put(1, 24, 390, up(n.natural), 9);
+  // page 2 - client information file
+  tick(2, o.title === 'Mr.' ? 33.5 : o.title === 'Mrs.' ? 91.5 : 61.5, 225);
+  put(2, 168, 229, lastFirstMid, 9.5);
+  tick(2, ms || o.title === 'Mrs.' ? 72.5 : 33.5, 251);
+  put(2, 457, 251, up(o.nationality), 8.5);
+  put(2, 30, 664, cn, 9); put(2, 30, 690, addr, 8.5); put(2, 30, 717, up(o.position || r['POSITION']), 9);
+  // page 4 - card application
+  tick(4, o.title === 'Mr.' ? 97.5 : o.title === 'Mrs.' ? 159 : 128.5, 127);
+  put(4, 207, 128, up(n.last), 9); put(4, 311, 128, up(n.first), 9); put(4, 420, 128, up(n.middle), 9);
+  put(4, 352, 147, up(o.nationality), 7.5);
+  put(4, 90, 249, up(o.position || r['POSITION']), 7.5); put(4, 197, 239, `${cn}, ${addr}`, 7, f, 305);
+  return { name: safe(`CTBC account opening ${r['EMPLOYEE ID']} ${n.natural}`) + '.pdf', bytes: await doc.save() };
+}
+window.WRForms = { ctbc, prf, COMPANIES, pesoWords, names, coe, confirmation, promotion, npa, appraisal, teamBuilding, erd, longDate, NPA_ACTIONS: Object.keys(NPA_TICK) };
 })();
