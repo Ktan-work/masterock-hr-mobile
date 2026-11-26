@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Whiterain HRA</title>
+<meta name="theme-color" content="#0b3442">
+<link rel="icon" href="wr-icon-192.png">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+/* Central HRA web: same navy + gold as the desktop app. Header band, sidebar menu, page panels. */
+:root {
+  --navy: #0b3442; --navy2: #155066; --navy3: #1d6880; --gold: #8fdcee; --gold-d: #2fa3c4; --bg: #e6eff2; --card: #ffffff;
+  --ink: #132a33; --muted: #5e7680; --line: #cfdee4; --red: #b8322a; --amber: #b5710b; --green: #1e7b3a; --edit: #ffe1ad;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; font: 14px/1.45 "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background: var(--bg); color: var(--ink); }
+button, input, select, textarea { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+/* sign-in + home */
+.splash { min-height: 100%; display: grid; place-items: center; padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
+  background: radial-gradient(900px 500px at 50% 110%, rgba(143,220,238,.16), transparent 60%), linear-gradient(160deg, #0f4556, #06222c); color: #fff; text-align: center; }
+.coin { width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 16px; display: grid; place-items: center; font: 800 38px/1 "Segoe UI", sans-serif; color: var(--gold);
+  background: radial-gradient(circle at 35% 30%, #1d6378, #0a3140 70%); border: 6px solid var(--gold); box-shadow: 0 0 0 3px #1c6f86 inset, 0 12px 40px rgba(0,0,0,.45); letter-spacing: -1px; }
+.splash h1 { margin: 0; font-size: 34px; letter-spacing: 6px; color: var(--gold); }
+.splash .sub { margin: 6px 0 26px; letter-spacing: 3px; font-size: 12px; color: #b6cfd8; }
+.splash p { color: #c8dce3; max-width: 380px; margin: 0 auto 18px; }
+.tiles { display: grid; grid-template-columns: repeat(1, minmax(0, 300px)); gap: 26px; justify-content: center; }
+.tile { border: 1px solid #2f7489; border-radius: 16px; padding: 30px 16px; background: linear-gradient(180deg, #165a70, #0c3a49); color: #fff; cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); transition: transform .12s, box-shadow .12s; }
+.tile:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(0,0,0,.45), 0 0 0 2px var(--gold) inset; }
+.tile b { display: block; font-size: 24px; letter-spacing: 2px; color: var(--gold); margin: 6px 0; } .tile span { color: #c8dce3; font-size: 13px; } .tile i { font-style: normal; font-size: 30px; }
+
+/* buttons */
+.btn { border: 0; border-radius: 9px; padding: 8px 15px; font-weight: 600; cursor: pointer; background: linear-gradient(180deg, #24748c, var(--navy)); color: #fff;
+  box-shadow: 0 2px 0 #06222c, inset 0 1px 0 rgba(255,255,255,.18); white-space: nowrap; }
+.btn.gold { background: linear-gradient(180deg, #b9ecf7, var(--gold-d)); color: #062530; box-shadow: 0 2px 0 #176f88, inset 0 1px 0 rgba(255,255,255,.5); }
+.btn.ghost { background: #fff; color: var(--navy); border: 1px solid var(--line); box-shadow: 0 1px 0 var(--line); }
+.btn.red { background: linear-gradient(180deg, #d55247, var(--red)); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn:focus-visible, .tile:focus-visible, .nav:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* app shell */
+#app { min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+header.band { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 8px max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
+  background: linear-gradient(180deg, #145064, var(--navy)); color: #fff; border-bottom: 3px solid var(--gold-d); }
+header.band .mini { width: 40px; height: 40px; border-width: 3px; font-size: 13px; margin: 0; box-shadow: none; flex: none; }
+header.band h1 { margin: 0; font-size: 16px; letter-spacing: 3px; color: var(--gold); line-height: 1.1; }
+header.band small { display: block; letter-spacing: 1px; color: #acc8d2; font-size: 11px; }
+header.band .sp { flex: 1; }
+header.band .who { color: #acc8d2; font-size: 12px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 0; }
+aside { background: linear-gradient(180deg, #0f4252, #08303d); color: #d3e3e9; padding: 10px 8px 20px; }
+aside .grp { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--gold); padding: 12px 10px 4px; }
+.nav { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; background: none; border: 0; color: #d3e3e9; padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+.nav:hover { background: rgba(255,255,255,.07); }
+.nav.on { background: linear-gradient(90deg, rgba(143,220,238,.28), rgba(143,220,238,.05)); color: #fff; box-shadow: inset 3px 0 0 var(--gold); }
+.nav em { font-style: normal; font-size: 10px; color: #86a8b4; margin-left: auto; }
+#page { padding: 16px max(16px, env(safe-area-inset-right)) 30px 16px; min-width: 0; }
+footer.status { background: #08303d; color: #acc8d2; font-size: 12px; padding: 4px 16px; }
+
+/* panels */
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(11,52,66,.06); overflow: hidden; min-width: 0; }
+.panel > h2 { margin: 0; padding: 8px 14px; font-size: 12px; letter-spacing: 2px; color: var(--gold); background: linear-gradient(90deg, #08303d, #165a70); border-bottom: 2px solid var(--gold-d); text-transform: uppercase; }
+.panel .body { padding: 12px 14px; }
+.row-flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row-flex > input, .row-flex > select { flex: 1; min-width: 160px; }
+input, select, textarea { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: #fff; min-width: 0; }
+input.search { background: #f1fbfd; border-color: #9fd6e5; }
+.muted { color: var(--muted); } .small { font-size: 12px; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; }
+dl.kv { margin: 0; display: grid; grid-template-columns: minmax(140px, 36%) 1fr; gap: 6px 14px; }
+dl.kv dt { color: var(--muted); } dl.kv dd { margin: 0; font-weight: 600; word-break: break-word; }
+.photo { display: grid; place-items: center; min-height: 300px; color: var(--muted); }
+.photo img { max-width: 100%; max-height: 360px; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+.hits { display: grid; gap: 4px; margin-top: 8px; max-height: 220px; overflow: auto; }
+.hit { text-align: left; background: #f2f8fa; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+.hit:hover { background: #e3f6fb; }
+.pill { font-size: 11px; font-weight: 700; border-radius: 20px; padding: 2px 8px; white-space: nowrap; }
+.pill.ok { background: #e2f3e7; color: var(--green); } .pill.no { background: #f6e1de; color: var(--red); } .pill.warn { background: #fbefd9; color: var(--amber); }
+.tbl-wrap { overflow: auto; max-height: 68vh; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { position: sticky; top: 0; background: #155066; color: #fff; text-align: left; padding: 6px 8px; font-weight: 600; white-space: nowrap; }
+td { padding: 5px 8px; border-top: 1px solid #eef1f6; white-space: nowrap; }
+tr:nth-child(even) td { background: #f5fafc; }
+tbody tr.click { cursor: pointer; } tbody tr.click:hover td { background: #e3f6fb; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; }
+.field { display: grid; grid-template-columns: minmax(120px, 42%) 1fr; gap: 8px; align-items: center; }
+.field label { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.field input.changed { background: var(--edit); border: 2px solid #d97a00; font-weight: 600; }
+.field input[readonly] { background: #f1f3f7; color: var(--muted); }
+.bar { position: sticky; bottom: 0; display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding: 10px 0; background: var(--bg); }
+.bar .info { margin-right: auto; color: var(--muted); }
+.drop { border: 3px dashed #8fb3bf; border-radius: 14px; background: #f7f9fc; padding: 28px; text-align: center; cursor: pointer; }
+.drop.hot { border-color: var(--gold-d); background: #e6f7fb; }
+.drop b { font-size: 19px; color: var(--navy); }
+.change-item { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+.change-item > .head { padding: 7px 10px; font-weight: 700; background: #eef5f8; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.change-item > .head.err { color: var(--red); background: #fbefed; } .change-item > .head.new { color: var(--green); }
+.change-item table td { white-space: normal; }
+.empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+.soon { text-align: center; padding: 50px 20px; color: var(--muted); }
+.soon b { display: block; font-size: 18px; color: var(--navy); margin-bottom: 6px; }
+.spin { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--navy); border-radius: 50%; animation: s 1s linear infinite; margin: 30px auto; }
+@keyframes s { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } .tile { transition: none; } }
+.toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); background: var(--navy); color: #fff; padding: 10px 16px; border-radius: 10px; z-index: 30; max-width: 90vw; box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.modal { position: fixed; inset: 0; background: rgba(6,34,44,.6); z-index: 20; display: grid; place-items: center; padding: 16px; }
+.modal .box { background: #fff; border-radius: 14px; width: min(560px, 100%); max-height: 88vh; overflow: auto; box-shadow: 0 20px 50px rgba(0,0,0,.4); }
+.modal .box > h3 { margin: 0; padding: 12px 16px; background: linear-gradient(90deg, #08303d, #165a70); color: var(--gold); letter-spacing: 1px; font-size: 15px; }
+.modal .box .body { padding: 14px 16px; } .modal ul { padding-left: 18px; } .modal li { margin-bottom: 4px; word-break: break-word; }
+.modal .foot { display: flex; gap: 8px; justify-content: flex-end; padding: 0 16px 16px; }
+.code { font-size: 28px; letter-spacing: 12px; text-align: center; width: 100%; font-weight: 700; }
+.msg-err { color: var(--red); font-weight: 600; } .msg-ok { color: var(--green); font-weight: 600; }
+.stat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.stat div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; }
+.stat b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; color: var(--navy); }
+
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; }
+  aside { display: flex; gap: 4px; overflow-x: auto; padding: 6px; }
+  aside .grp { display: none; } .nav { width: auto; white-space: nowrap; } .nav em { display: none; }
+  .grid2, .fields { grid-template-columns: 1fr; }
+  header.band .who { display: none; }
+  .tiles { grid-template-columns: 1fr; }
+}
+/* phones: nothing wider than the screen */
+@media (max-width: 600px) {
+  html, body { overflow-x: hidden; }
+  #app, .shell, #page, .panel { max-width: 100vw; }
+  header.band { flex-wrap: wrap; gap: 8px; }
+  header.band h1 { font-size: 13px; letter-spacing: 1.5px; flex: 1 1 60%; }
+  header.band .sp { display: none; }
+  header.band .btn { padding: 6px 10px; font-size: 13px; }
+  .row-flex > input, .row-flex > select { min-width: 0; flex: 1 1 100%; }
+  .row-flex > .btn { flex: 1 1 auto; }
+  .field { grid-template-columns: 1fr; gap: 2px; }
+  .bar { flex-wrap: wrap; } .bar .info { flex: 1 1 100%; }
+  .bar .btn { flex: 1 1 auto; }
+  dl.kv { grid-template-columns: 1fr; } dl.kv dd { margin-bottom: 6px; }
+  .splash h1 { font-size: 26px; letter-spacing: 3px; }
+  .stat { grid-template-columns: 1fr; }
+}
+
+/* ---- Whiterain 3D layer */
+.panel { box-shadow: 0 1px 0 #fff inset, 0 6px 18px rgba(11,52,66,.12), 0 1px 3px rgba(11,52,66,.18); border-color: #c7dbe2; }
+.panel > h2 { background: linear-gradient(180deg, #1a6c85, #0b3442); text-shadow: 0 1px 0 rgba(0,0,0,.35); border-bottom: 2px solid #2fa3c4; }
+.btn { box-shadow: 0 3px 0 #06222c, 0 6px 12px rgba(6,34,44,.25), inset 0 1px 0 rgba(255,255,255,.25); transition: transform .08s, box-shadow .08s; }
+.btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #06222c, 0 2px 6px rgba(6,34,44,.25), inset 0 1px 0 rgba(255,255,255,.2); }
+.btn.gold { color: #062530; box-shadow: 0 3px 0 #176f88, 0 6px 12px rgba(23,111,136,.3), inset 0 1px 0 rgba(255,255,255,.7); }
+.btn.ghost { box-shadow: 0 2px 0 #c2d6dd, 0 4px 10px rgba(11,52,66,.08); }
+header.band { background: linear-gradient(180deg, #1b6d86 0%, #0e4252 55%, #0b3442 100%); box-shadow: 0 4px 14px rgba(6,34,44,.35); }
+.coin { background: #fff; border: 4px solid #8fdcee; box-shadow: 0 0 0 4px #0e4252, 0 14px 40px rgba(0,0,0,.45), inset 0 -6px 12px rgba(11,52,66,.12); overflow: hidden; }
+.coin img { width: 78%; height: auto; }
+.logo-card { background: linear-gradient(180deg, #ffffff, #eef6f8); border-radius: 18px; padding: 18px 26px; margin: 0 auto 18px; width: min(420px, 92vw);
+  box-shadow: 0 2px 0 #fff inset, 0 18px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(143,220,238,.6); transform: perspective(700px) rotateX(6deg); }
+.logo-card img { width: 100%; display: block; }
+.tile { background: linear-gradient(180deg, #1d6f88, #0c3a49); box-shadow: 0 14px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -4px 0 rgba(0,0,0,.25); }
+.nav.on { box-shadow: inset 3px 0 0 #8fdcee, 0 2px 6px rgba(0,0,0,.25); }
+th { background: linear-gradient(180deg, #1a6c85, #155066); }
+</style>
+</head>
+<body>
+
+<!-- sign-in -->
+<section class="splash" id="signin" hidden>
+  <div>
+    <div class="logo-card"><img src="wr-logo.png" alt="Whiterain Digital"></div>
+    <h1>WHITERAIN HRA</h1>
+    <div class="sub">HR AUTOMATION SYSTEM · WEB</div>
+    <p id="signin-msg">Sign in with the Google account the HR database is shared with.</p>
+    <button class="btn gold" id="signin-btn">Sign in with Google</button>
+  </div>
+</section>
+
+<!-- home: HR or Admin -->
+<section class="splash" id="home" hidden>
+  <div>
+    <div class="logo-card"><img src="wr-logo.png" alt="Whiterain Digital"></div>
+    <h1>WHITERAIN HRA</h1>
+    <div class="sub">HR AUTOMATION SYSTEM</div>
+    <div class="tiles">
+      <button class="tile" data-sys="hr"><i>👥</i><b>HR</b><span>HR Automation System</span></button>
+      
+    </div>
+    <p class="small" style="margin-top:22px"><span id="home-who"></span> · <a href="#" id="home-out" style="color:var(--gold)">Sign out</a></p>
+  </div>
+</section>
+
+<!-- app -->
+<div id="app" hidden>
+  <header class="band">
+    <div class="coin mini"><img src="wr-icon-192.png" alt=""></div>
+    <h1 id="app-title">WHITERAIN HRA AUTOMATION SYSTEM<small id="app-sub">Human Resources</small></h1>
+    <span class="sp"></span>
+    
+    <button class="btn ghost" id="home-btn">⌂ Home</button>
+    <span class="who" id="who"></span>
+    <button class="btn ghost" id="out-btn">Sign out</button>
+  </header>
+  <div class="shell">
+    <aside id="menu"></aside>
+    <main id="page"></main>
+  </div>
+  <footer class="status" id="status"></footer>
+</div>
+
+<script>
+/* ======================= settings (same Google Sheets and photo folder as the desktop app) ======================= */
+const CLIENT_ID = '747046879263-64eg8pft9q16doupmm7nikf31a4p0c2b.apps.googleusercontent.com';   // public web client ID (not a secret)
+const SHEET_ID = '1H7AEf9rUBFFnGii8YUEZhRhGZ8yZjdRvdUQjJEU1rO0';          // Whiterain HR Database
+const COMP_ID = '1TTOYPPIfJR60DsmcsK9NYHhpz6HfV3lIcDHkp_vHDnk';           // Compensation (shared only with the salary group)
+const PHOTOS_FOLDER = '';                                               // no photo folder yet
+const TAB = 'Employee Database', ID = 'EMPLOYEE ID';
+const OWNER_EMAIL = 'ktan6689@gmail.com';                                 // passcodes only ever go here
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive',
+  'https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/userinfo.email'].join(' ');
+const COMP = ['CURRENT BASIC SALARY', 'FIXED ALLOWANCE'];
+const LOCKED = [ID];
+const LOOKUP_FIELDS = [['Full name', 'FULL NAME'], ['Employee ID', ID], ['Company', 'COMPANY'], ['Expat / Local', 'TYPE (EXPAT / LOCAL)'],
+  ['Last name', 'LAST NAME'], ['First name', 'FIRST NAME'], ['Middle name', 'MIDDLE NAME'], ['Nickname', 'NICKNAME'],
+  ['Position', 'POSITION'], ['Department', 'DEPARTMENT'], ['Brand', 'BRAND'], ['Basic salary', 'CURRENT BASIC SALARY'], ['Fixed allowance', 'FIXED ALLOWANCE']];
+const TEAM_COLS = [['Emp ID', ID], ['Name', 'FULL NAME'], ['Company', 'COMPANY'], ['Type', 'TYPE (EXPAT / LOCAL)'], ['Nickname', 'NICKNAME'],
+  ['Position', 'POSITION'], ['Department', 'DEPARTMENT'], ['Brand', 'BRAND']];
+
+/* ======================= state + helpers ======================= */
+let token = null, tokenClient = null, email = '', hdr = [], rows = [], canSeeComp = false, compHdr = [], photoIndex = null, photoCache = {};
+let current = null, system = 'hr', pageKey = 'lookup';
+const $ = s => document.querySelector(s);
+const norm = s => String(s ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const text = v => { const s = String(v ?? '').trim(); return ['NONE', 'N/A'].includes(s.toUpperCase()) ? '' : s; };
+const val = (r, k) => text(r && r[k]);
+const title = h => h.charAt(0) + h.slice(1).toLowerCase();
+function toast(t, ms = 2800) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), ms); }
+function status(t) { $('#status').textContent = t; }
+const colLetter = n => { let s = ''; n++; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+const cellValue = v => { const s = String(v).trim(), c = s.replace(/,/g, ''); return /^-?(0|[1-9]\d*)(\.\d+)?$/.test(c) ? Number(c) : s; };   // numbers stay numbers, IDs keep text
+function parseDate(s) { const m = String(s || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if (!m) return null; const d = new Date(+m[3], +m[2] - 1, +m[1]); return isNaN(d) ? null : d; }
+const daysTo = d => Math.round((d - new Date(new Date().toDateString())) / 864e5);
+
+function modal(titleText, bodyHtml, buttons) {
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div class="box" role="dialog" aria-modal="true"><h3>${esc(titleText)}</h3><div class="body">${bodyHtml}</div><div class="foot"></div></div>`;
+  const foot = m.querySelector('.foot');
+  return new Promise(resolve => {
+    buttons.forEach(([label, cls, value]) => { const b = document.createElement('button'); b.className = 'btn ' + (cls || ''); b.textContent = label;
+      b.onclick = () => { m.remove(); resolve(value); }; foot.appendChild(b); });
+    document.body.appendChild(m); (foot.lastChild || {}).focus && foot.lastChild.focus();
+  });
+}
+
+/* ======================= Google sign-in + API ======================= */
+function initAuth() {
+  if (!window.google || !google.accounts) return setTimeout(initAuth, 200);
+  tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES,
+    callback: async r => {
+      signinBusy(false);
+      if (r.error) { showSignin('Sign-in was cancelled. Try again.'); return; }
+      token = r.access_token; try { sessionStorage.setItem('hraTok', JSON.stringify({ t: token, exp: Date.now() + (r.expires_in - 60) * 1000 })); } catch (e) {}
+      await afterSignIn(); },
+    // pop-up blocked / closed: say so instead of silently doing nothing (this made "Sign in" look dead)
+    error_callback: e => { signinBusy(false);
+      showSignin(e && e.type === 'popup_failed_to_open' ? 'The Google sign-in window was blocked. Allow pop-ups for this site, then click Sign in again.'
+        : 'The Google sign-in window was closed before finishing. Click Sign in to try again.'); } });
+  if (takeRedirectToken()) return;
+  let saved = null; try { saved = JSON.parse(sessionStorage.getItem('hraTok') || 'null'); } catch (e) {}
+  if (saved && saved.exp > Date.now()) { token = saved.t; afterSignIn(); } else showSignin(IN_APP ? IN_APP_MSG : undefined);
+}
+/* Phones: full-page Google sign-in that comes back here (pop-ups don't open reliably on phones).
+   Needs REDIRECT_URI in the OAuth client's "Authorized redirect URIs". */
+const REDIRECT_URI = 'https://ktan-work.github.io/masterock-hr-mobile/web/whiterain/';
+const IS_PHONE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+const IN_APP = /FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|Telegram|; wv\)|GSA\//i.test(navigator.userAgent);
+const IN_APP_MSG = 'This link opened inside another app, where Google does not allow sign-in. Tap ⋮ or the share button and choose "Open in Chrome" (Android) or "Open in Safari" (iPhone).';
+function redirectSignIn() {
+  const state = crypto.getRandomValues(new Uint32Array(2)).join('-');
+  try { sessionStorage.setItem('hraState', state); } catch (e) {}
+  location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({ client_id: CLIENT_ID, redirect_uri: REDIRECT_URI,
+    response_type: 'token', scope: SCOPES, prompt: 'select_account', include_granted_scopes: 'true', state });
+}
+function takeRedirectToken() {
+  if (!location.hash.includes('access_token=') && !location.hash.includes('error=')) return false;
+  const p = new URLSearchParams(location.hash.slice(1)); history.replaceState(null, '', location.pathname + location.search);
+  let want = null; try { want = sessionStorage.getItem('hraState'); sessionStorage.removeItem('hraState'); } catch (e) {}
+  if (p.get('error') || !p.get('access_token') || p.get('state') !== want) { showSignin(p.get('error') === 'access_denied' ? 'Sign-in was cancelled. Try again.' : 'Sign-in did not finish. Please try again.'); return true; }
+  token = p.get('access_token');
+  try { sessionStorage.setItem('hraTok', JSON.stringify({ t: token, exp: Date.now() + ((+p.get('expires_in') || 3600) - 60) * 1000 })); } catch (e) {}
+  afterSignIn(); return true;
+}
+function screen(id) { ['signin', 'home', 'app'].forEach(s => $('#' + s).hidden = s !== id); }
+function showSignin(msg) { screen('signin'); if (msg) $('#signin-msg').textContent = msg; }
+function signinBusy(on) { const b = $('#signin-btn'); b.disabled = on; b.textContent = on ? 'Opening Google sign-in…' : 'Sign in with Google'; if (on) setTimeout(() => signinBusy(false), 20000); }
+$('#signin-btn').onclick = () => {
+  if (IN_APP) { showSignin(IN_APP_MSG); return; }
+  if (IS_PHONE) { signinBusy(true); redirectSignIn(); return; }
+  if (!tokenClient) { showSignin('Still loading Google sign-in… try again in a few seconds.'); return; }
+  signinBusy(true);
+  tokenClient.requestAccessToken({ prompt: 'select_account' });   // always show the account chooser, so signing in again after "Sign out" works
+};
+// sign out = forget the token here only; revoking the Google grant made the next sign-in fail / ask for consent again
+function signOut() { try { sessionStorage.removeItem('hraTok'); sessionStorage.removeItem('hraPin'); } catch (e) {} token = null; email = ''; photoCache = {}; photoIndex = null; showSignin('Signed out.'); }
+$('#out-btn').onclick = signOut; $('#home-out').onclick = e => { e.preventDefault(); signOut(); };
+
+async function api(url, opts = {}) {
+  const headers = { Authorization: 'Bearer ' + token, ...(opts.body && typeof opts.body === 'string' ? { 'Content-Type': 'application/json' } : {}), ...(opts.headers || {}) };
+  const r = await fetch(url, { ...opts, headers });
+  if (r.status === 401) { token = null; try { sessionStorage.removeItem('hraTok'); } catch (e) {} showSignin('Your session ended. Please sign in again.'); throw new Error('signed out'); }
+  if (!r.ok) { const e = new Error(r.status === 403 ? 'No access' : 'Google returned ' + r.status); e.status = r.status;
+    try { e.detail = await r.text(); } catch (x) { e.detail = ''; } throw e; }
+  return r;
+}
+const sheetUrl = (id, range) => `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(range)}`;
+
+async function afterSignIn() {
+  screen('home'); $('#home-who').textContent = 'Loading…';
+  try {
+    try { const u = await (await api('https://www.googleapis.com/oauth2/v3/userinfo')).json(); email = u.email || ''; } catch (e) { if (e.message === 'signed out') return; }
+    // second step: 4-digit PIN emailed to Kevin (once per sign-in; a page refresh in the same session doesn't ask again)
+    let pinOk = false;
+    try { const p = JSON.parse(sessionStorage.getItem('hraPin') || 'null'); pinOk = !!(p && p.t === token.slice(-16) && p.exp > Date.now()); } catch (e) {}
+    if (!pinOk) {
+      $('#home-who').textContent = 'Waiting for the sign-in PIN…';
+      const ok = await ensurePasscode('sign in to Whiterain HRA', false);
+      if (!ok) { signOut(); showSignin('Sign-in needs the PIN sent to ' + OWNER_EMAIL + '.'); return; }
+      let exp = Date.now() + 3600e3; try { exp = JSON.parse(sessionStorage.getItem('hraTok')).exp; } catch (e) {}
+      try { sessionStorage.setItem('hraPin', JSON.stringify({ t: token.slice(-16), exp })); } catch (e) {}
+      $('#home-who').textContent = 'Loading…';
+    }
+    await loadData();
+    $('#home-who').textContent = `${email || 'Signed in'} · ${rows.length} employees`;
+  } catch (e) {
+    if (e.message === 'signed out') return;
+    showSignin(e.status === 403 ? 'This Google account has no access to the HR database. Ask Kevin to share the Whiterain HR Database with you.' : 'Could not load the HR database: ' + e.message);
+  }
+}
+
+async function loadData() {
+  const [main, comp] = await Promise.all([
+    api(sheetUrl(SHEET_ID, `'${TAB}'`)).then(r => r.json()),
+    api(sheetUrl(COMP_ID, 'A:ZZ')).then(r => r.json()).catch(e => { if (e.message === 'signed out') throw e; return null; })   // only the salary group can read it
+  ]);
+  const v = main.values || []; hdr = (v[0] || []).map(norm);
+  rows = v.slice(1).map((r, i) => { const o = { _row: i + 2 }; hdr.forEach((h, j) => { if (h) o[h] = r[j] ?? ''; }); return o; }).filter(o => val(o, ID));
+  canSeeComp = !!(comp && comp.values && comp.values.length);
+  compHdr = canSeeComp ? comp.values[0].map(norm) : [];
+  if (canSeeComp) {
+    const byId = {}; comp.values.slice(1).forEach((r, i) => { if (r[0]) byId[norm(r[0])] = { r, row: i + 2 }; });
+    rows.forEach(o => { const c = byId[norm(o[ID])]; if (c) compHdr.forEach((h, j) => { if (h && h !== ID) o[h] = c.r[j] ?? ''; }); });
+  }
+  status(`${rows.length} employees loaded${canSeeComp ? ' · salary access' : ''}`);
+}
+function findRows(q) {
+  q = norm(q); if (!q) return [];
+  const exact = rows.filter(r => [r[ID], r['MROCK EMP ID'], r['PCL EMP ID']].some(x => norm(x) === q)); if (exact.length) return exact;
+  const words = q.replace(/,/g, ' ').split(' ').filter(Boolean);
+  return rows.filter(r => { const hay = norm([r['FULL NAME'], r['NICKNAME'], r['NAME AS IN PASSPORT'], r['FIRST NAME'], r['LAST NAME / SURNAME']].join(' ')); return words.every(w => hay.includes(w)); });
+}
+const byId = id => rows.find(r => norm(r[ID]) === norm(id));
+
+/* photos in the shared Drive folder */
+async function photoIndexLoad() {
+  if (photoIndex) return photoIndex; photoIndex = {}; let pt = '';
+  do { const r = await (await api(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`'${PHOTOS_FOLDER}' in parents and trashed=false`)}&fields=nextPageToken,files(id,name)&pageSize=1000${pt ? '&pageToken=' + pt : ''}`)).json();
+    (r.files || []).forEach(f => photoIndex[f.name.replace(/\.[^.]+$/, '').toUpperCase()] = f.id); pt = r.nextPageToken || ''; } while (pt);
+  return photoIndex;
+}
+async function photoUrl(id) {
+  if (photoCache[id] !== undefined) return photoCache[id];
+  try { const idx = await photoIndexLoad(), fid = idx[norm(id)]; if (!fid) return photoCache[id] = '';
+    return photoCache[id] = URL.createObjectURL(await (await api(`https://www.googleapis.com/drive/v3/files/${fid}?alt=media`)).blob());
+  } catch (e) { return photoCache[id] = ''; }
+}
+
+/* ======================= menu + navigation ======================= */
+const MENUS = {
+  hr: [['EMPLOYEE', [['lookup', 'Employee Lookup'], ['team', 'Team Lookup'], ['update', 'Employee Update'], ['dropbox', 'Drop Box']]],
+       ['FORMS', [['coe', 'Certificate of Employment', 2], ['confirm', 'Confirmation Letter', 2], ['promote', 'Promotion Letter', 2], ['npa', 'Notice of Personnel Action', 2],
+                  ['appraisal', 'Performance Appraisal', 2], ['ctbc', 'CTBC Bank Form', 2], ['erd', 'Relationship Disclosure (ERD)', 2], ['teambuild', 'Team Building Form', 2], ['prf', "PRF's, CA & ATD", 2]]],
+       ['REPORTS', [['resign', 'Resignation Tracker', 3]]]],
+};
+document.querySelectorAll('[data-sys]').forEach(b => b.onclick = () => openSystem(b.dataset.sys));
+$('#home-btn').onclick = () => { screen('home'); };
+function openSystem(sys) {
+  system = sys; screen('app');
+  $('#app-title').firstChild.textContent = 'WHITERAIN HRA AUTOMATION SYSTEM';
+  $('#app-sub').textContent = sys === 'hr' ? 'Human Resources' : 'Administration';
+  $('#who').textContent = email;
+  $('#menu').innerHTML = MENUS[sys].map(([g, items]) => `<div class="grp">${g}</div>` + items.map(([k, label, phase]) =>
+    `<button class="nav" data-page="${k}">${esc(label)}${phase ? `<em>soon</em>` : ''}</button>`).join('')).join('');
+  document.querySelectorAll('.nav').forEach(b => b.onclick = () => go(b.dataset.page));
+  go(sys === 'hr' ? 'lookup' : 'office');
+}
+const PAGES = { lookup: pageLookup, team: pageTeam, update: pageUpdate, dropbox: pageDropbox, };
+function go(k) {
+  pageKey = k; document.querySelectorAll('.nav').forEach(b => b.classList.toggle('on', b.dataset.page === k));
+  const item = MENUS[system].flatMap(g => g[1]).find(i => i[0] === k);
+  if (PAGES[k]) PAGES[k](); else pageSoon(item ? item[1] : k, item ? item[2] : 2);
+  scrollTo(0, 0);
+}
+function pageSoon(name, phase) {
+  const what = { 2: 'the Whiterain forms', 3: 'the trackers' }[phase] || 'this page';
+  $('#page').innerHTML = `<div class="panel"><h2>${esc(name)}</h2><div class="soon"><b>Coming in phase ${phase}</b>This page is part of ${what}. It is being built now.</div></div>`;
+}
+
+/* ======================= Employee Lookup ======================= */
+let lastQuery = '';
+function pageLookup() {
+  $('#page').innerHTML = `
+    <div class="panel"><h2>Employee Lookup</h2><div class="body">
+      <div class="row-flex"><input class="search" id="q" placeholder="Employee ID (SL-1234, M0123) or first and last name" value="${esc(lastQuery)}" autocomplete="off"><button class="btn gold" id="go">Search</button></div>
+      <div id="msg" class="small msg-ok" style="margin-top:6px"></div><div class="hits" id="hits"></div></div></div>
+    <div class="grid2">
+      <div class="panel"><h2>Matched record</h2><div class="body"><dl class="kv" id="kv"></dl>
+        <div class="row-flex" style="margin-top:12px"><button class="btn" id="to-update" disabled>Update this employee</button></div></div></div>
+      <div class="panel"><h2>Photo</h2><div class="body photo" id="photo">No employee selected</div></div>
+    </div>`;
+  const run = () => {
+    lastQuery = $('#q').value; const hits = findRows(lastQuery); $('#hits').innerHTML = '';
+    if (!lastQuery.trim()) { $('#msg').textContent = ''; return; }
+    if (!hits.length) { $('#msg').className = 'small msg-err'; $('#msg').textContent = 'No employee found.'; showRecord(null); return; }
+    $('#msg').className = 'small msg-ok';
+    if (hits.length === 1) { showRecord(hits[0]); return; }
+    $('#msg').textContent = `${hits.length} employees match - pick one.`;
+    $('#hits').innerHTML = hits.slice(0, 50).map(r => `<button class="hit" data-id="${esc(r[ID])}">${esc(r[ID])}  ·  ${esc(val(r, 'FULL NAME'))}  (${esc(val(r, 'COMPANY'))})</button>`).join('');
+    $('#hits').querySelectorAll('.hit').forEach(b => b.onclick = () => { $('#hits').innerHTML = ''; showRecord(byId(b.dataset.id)); });
+  };
+  $('#go').onclick = run; $('#q').onkeydown = e => { if (e.key === 'Enter') run(); };
+  $('#to-update').onclick = () => go('update');
+  if (current) showRecord(current); else setTimeout(() => { const q = $('#q'); if (q) q.focus(); }, 30);
+}
+async function showRecord(r) {
+  current = r;
+  $('#kv').innerHTML = r ? LOOKUP_FIELDS.filter(([, k]) => !COMP.includes(k) || canSeeComp)
+    .map(([l, k]) => `<dt>${esc(l)}</dt><dd>${esc(k === 'NAME AS IN PASSPORT' ? (val(r, k) || val(r, 'FULL NAME')) : val(r, k)) || '<span class="muted">—</span>'}</dd>`).join('') : '';
+  $('#to-update').disabled = !r;
+  if (r) { $('#msg').className = 'small msg-ok'; $('#msg').textContent = `Record found: ${r[ID]} ${val(r, 'FULL NAME')}`; status(`Selected ${r[ID]}`); }
+  const ph = $('#photo'); ph.textContent = r ? 'Loading photo…' : 'No employee selected';
+  if (r) { const u = await photoUrl(r[ID]); if (current === r) ph.innerHTML = u ? `<img src="${u}" alt="Photo of ${esc(val(r, 'FULL NAME'))}">` : 'No photo on file'; }
+}
+
+/* ======================= Team Lookup ======================= */
+let teamSel = { dept: 'All', comp: 'All', type: 'All' };
+function pageTeam() {
+  const uniq = k => ['All', ...[...new Set(rows.map(r => val(r, k)).filter(Boolean))].sort()];
+  const sel = (id, label, opts, cur) => `<label class="muted" for="${id}">${label}</label><select id="${id}" style="flex:1 1 150px">${opts.map(o => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+  $('#page').innerHTML = `<div class="panel"><h2>Team / Department search</h2><div class="body">
+      <div class="row-flex">${sel('comp', 'Company', uniq('COMPANY'), teamSel.comp)}${sel('type', 'Expat / Local', ['All', 'EXPAT', 'LOCAL'], teamSel.type)}${sel('dept', 'Department', uniq('DEPARTMENT'), teamSel.dept)}</div>
+      <div id="count" class="small muted" style="margin-top:8px"></div></div></div>
+    <div class="tbl-wrap"><table><thead><tr>${TEAM_COLS.map(c => `<th>${c[0]}</th>`).join('')}</tr></thead><tbody id="tb"></tbody></table></div>`;
+  const run = () => {
+    teamSel = { dept: $('#dept').value, comp: $('#comp').value, type: $('#type').value };
+    const ok = (k, v) => v === 'All' || val(r0, k) === v; let r0;
+    const hits = rows.filter(r => (r0 = r) && ok('DEPARTMENT', teamSel.dept) && ok('COMPANY', teamSel.comp) && ok('TYPE (EXPAT / LOCAL)', teamSel.type));
+    $('#count').textContent = `${hits.length} employee(s) found - click a row to open it`;
+    $('#tb').innerHTML = hits.map(r => `<tr class="click" data-id="${esc(r[ID])}">${TEAM_COLS.map(c => `<td>${esc(val(r, c[1]))}</td>`).join('')}</tr>`).join('');
+    $('#tb').querySelectorAll('tr').forEach(tr => tr.onclick = () => { current = byId(tr.dataset.id); go('lookup'); });
+  };
+  $('#dept').onchange = $('#comp').onchange = $('#type').onchange = run; run();
+}
+
+/* ======================= Employee Update ======================= */
+function pageUpdate() {
+  $('#page').innerHTML = `<div class="panel"><h2>Employee Update</h2><div class="body">
+      <div class="row-flex"><input class="search" id="uq" placeholder="Employee ID or name" autocomplete="off"><button class="btn gold" id="ufind">Find</button>
+        <button class="btn ghost" id="ucur">Use employee from Lookup</button></div><div class="hits" id="uhits"></div>
+      <div class="row-flex" style="margin-top:10px"><b id="utitle" style="font-size:15px;flex:1">No employee selected</b><input id="ufilter" placeholder="Filter fields (e.g. passport, visa, bank)" style="flex:0 1 300px"></div></div></div>
+    <div id="uforms"></div>
+    <div class="bar"><span class="info" id="uinfo"></span><button class="btn ghost" id="uundo" disabled>Discard changes</button><button class="btn gold" id="usave" disabled>Save to database</button></div>`;
+  const find = () => { const hits = findRows($('#uq').value); $('#uhits').innerHTML = '';
+    if (hits.length === 1) return loadEmp(hits[0]);
+    if (!hits.length) { $('#uinfo').textContent = 'No employee found.'; return; }
+    $('#uhits').innerHTML = hits.slice(0, 50).map(r => `<button class="hit" data-id="${esc(r[ID])}">${esc(r[ID])}  ·  ${esc(val(r, 'FULL NAME'))}  (${esc(val(r, 'COMPANY'))})</button>`).join('');
+    $('#uhits').querySelectorAll('.hit').forEach(b => b.onclick = () => { $('#uhits').innerHTML = ''; loadEmp(byId(b.dataset.id)); }); };
+  $('#ufind').onclick = find; $('#uq').onkeydown = e => { if (e.key === 'Enter') find(); };
+  $('#ucur').onclick = () => current ? loadEmp(current) : toast('Pick an employee in Employee Lookup first.');
+  $('#ufilter').oninput = e => { const f = norm(e.target.value); document.querySelectorAll('#uforms .field').forEach(d => d.hidden = !!f && !d.dataset.h.includes(f)); };
+  $('#uundo').onclick = () => current && loadEmp(current, true);
+  $('#usave').onclick = saveUpdate;
+  if (current) loadEmp(current, true); else buildForm(null);
+}
+function changedInputs() { return [...document.querySelectorAll('#uforms input[data-h]')].filter(i => i.value.trim() !== i.dataset.orig); }
+async function loadEmp(r, force) {
+  if (!force && changedInputs().length && !(await modal('Unsaved changes', 'Discard the changes you have not saved?', [['Keep editing', 'ghost', false], ['Discard', 'red', true]]))) return;
+  current = r; buildForm(r);
+}
+function buildForm(r) {
+  const groups = [['Profile', hdr.filter(h => h && !COMP.includes(h))]];
+  if (canSeeComp) groups.push(['Compensation (restricted)', COMP]);
+  $('#utitle').textContent = r ? `${r[ID]}  ${val(r, 'FULL NAME')}` : 'No employee selected';
+  $('#uforms').innerHTML = groups.map(([g, keys]) => `<div class="panel"><h2>${esc(g)}</h2><div class="body fields">${keys.map(h => {
+      const v = r ? val(r, h) : '';
+      return `<div class="field" data-h="${esc(h)}"><label for="f-${esc(h)}">${esc(title(h))}</label><input id="f-${esc(h)}" data-h="${esc(h)}" data-orig="${esc(v)}" value="${esc(v)}" ${!r || LOCKED.includes(h) ? 'readonly' : ''}></div>`; }).join('')}</div></div>`).join('');
+  document.querySelectorAll('#uforms input[data-h]').forEach(i => i.oninput = () => { i.classList.toggle('changed', i.value.trim() !== i.dataset.orig); updateState(); });
+  updateState();
+}
+function updateState() {
+  const n = changedInputs().length;
+  $('#usave').disabled = !n || !current; $('#uundo').disabled = !n;
+  $('#uinfo').textContent = !current ? '' : n ? `${n} field(s) changed` : 'Edit any field, then click Save. Changed fields turn orange.';
+}
+async function saveUpdate() {
+  const r = current, ch = changedInputs().map(i => ({ h: i.dataset.h, from: i.dataset.orig, to: i.value.trim() }));
+  if (!r || !ch.length) return;
+  if (ch.some(c => COMP.includes(c.h)) && !(await ensurePasscode('change salary / allowances'))) return;
+  const ok = await modal('Save changes', `Save these changes for ${esc(r[ID])}?<ul>${ch.map(c => `<li><b>${esc(c.h)}</b>: “${esc(c.from) || '—'}” → “${esc(c.to) || '—'}”</li>`).join('')}</ul>`,
+    [['Cancel', 'ghost', false], ['Save to database', 'gold', true]]);
+  if (!ok) return;
+  try { $('#usave').disabled = true; status('Saving…'); await updateEmployee(r, Object.fromEntries(ch.map(c => [c.h, c.to])));
+    toast(`Saved ${ch.length} change(s) for ${r[ID]}`); status(`Saved ${ch.length} change(s) for ${r[ID]}`); loadEmp(byId(r[ID]) || r, true);
+  } catch (e) { if (e.message !== 'signed out') modal('Not saved', `The changes were not saved:<br><br>${esc(e.status === 403 ? 'Your Google account cannot edit this sheet.' : e.message)}`, [['OK', 'gold', 1]]); updateState(); }
+}
+
+/* write changes: main sheet (row re-checked first) + compensation sheet */
+async function updateEmployee(r, changes) {
+  const main = Object.entries(changes).filter(([h]) => !COMP.includes(h)), comp = Object.entries(changes).filter(([h]) => COMP.includes(h));
+  if (main.length) {
+    const chk = await (await api(sheetUrl(SHEET_ID, `'${TAB}'!${colLetter(hdr.indexOf(ID))}${r._row}`))).json();
+    if (norm(((chk.values || [[]])[0] || [])[0]) !== norm(r[ID])) { await loadData(); throw new Error('The sheet changed while you were editing. Open the employee again and retry.'); }
+    const data = main.map(([h, v]) => ({ range: `'${TAB}'!${colLetter(hdr.indexOf(h))}${r._row}`, values: [[v === '' ? '' : cellValue(v)]] }));
+    await api(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate`, { method: 'POST', body: JSON.stringify({ valueInputOption: 'RAW', data }) });
+  }
+  if (comp.length) {
+    if (!canSeeComp) throw new Error('You do not have access to compensation data.');
+    const cv = (await (await api(sheetUrl(COMP_ID, 'A:ZZ'))).json()).values || [], ch = cv[0].map(norm);
+    let crow = cv.findIndex((x, i) => i > 0 && x[0] && norm(x[0]) === norm(r[ID])) + 1;
+    if (crow <= 0) { await api(sheetUrl(COMP_ID, 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: JSON.stringify({ values: [[r[ID]]] }) }); crow = cv.length + 1; }
+    const data = comp.map(([h, v]) => ({ range: `${colLetter(ch.indexOf(h))}${crow}`, values: [[v === '' ? '' : cellValue(v)]] }));
+    await api(`https://sheets.googleapis.com/v4/spreadsheets/${COMP_ID}/values:batchUpdate`, { method: 'POST', body: JSON.stringify({ valueInputOption: 'RAW', data }) });
+  }
+  Object.assign(r, changes);
+}
+async function addEmployee(rec) {
+  if (byId(rec[ID])) throw new Error(`${rec[ID]} already exists`);
+  const main = Object.fromEntries(Object.entries(rec).filter(([h]) => !COMP.includes(h)));
+  if (hdr.includes('NO') && !main.NO) { const nums = rows.map(r => parseInt(r.NO, 10)).filter(n => !isNaN(n)); main.NO = nums.length ? Math.max(...nums) + 1 : rows.length + 1; }
+  await api(sheetUrl(SHEET_ID, `'${TAB}'!A1`) + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',
+    { method: 'POST', body: JSON.stringify({ values: [hdr.map(h => main[h] === undefined || main[h] === '' ? '' : cellValue(main[h]))] }) });
+  const comp = Object.entries(rec).filter(([h]) => COMP.includes(h));
+  if (comp.length) {
+    if (!canSeeComp) throw new Error('You do not have access to compensation data.');
+    await api(sheetUrl(COMP_ID, 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',
+      { method: 'POST', body: JSON.stringify({ values: [compHdr.map(h => h === ID ? rec[ID] : (rec[h] !== undefined ? cellValue(rec[h]) : ''))] }) });
+  }
+  await loadData();
+}
+
+/* ======================= passcode for salary changes (emailed to Kevin only) ======================= */
+let unlockedUntil = 0, codeState = null;
+const sha = async s => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map(b => b.toString(16).padStart(2, '0')).join('');
+const b64url = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function sendCode(what) {
+  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 10000).padStart(4, '0'), salt = crypto.getRandomValues(new Uint32Array(2)).join('-');
+  const body = `Hi Kevin,\n\nPasscode for Whiterain HRA: ${code}\n\nRequested at ${new Date().toLocaleString()} by ${email || 'a signed-in user'} (web app) to ${what}.\n` +
+    `It works for 10 minutes and can only be used once.\nIf you did not expect this, someone is trying to ${what} - do not share the code.\n\n- Whiterain HRA`;
+  const raw = b64url(`To: ${OWNER_EMAIL}\r\nSubject: Whiterain HRA passcode: ${code}\r\nContent-Type: text/plain; charset="UTF-8"\r\n\r\n${body}`);
+  await api('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', { method: 'POST', body: JSON.stringify({ raw }) });
+  codeState = { salt, hash: await sha(salt + code), exp: Date.now() + 10 * 60e3, tries: 0 };
+}
+async function checkCode(code) {
+  if (!codeState) return [false, 'No passcode yet - click "Send a new code".'];
+  if (Date.now() > codeState.exp) { codeState = null; return [false, 'The passcode has expired - click "Send a new code".']; }
+  if (await sha(codeState.salt + code) === codeState.hash) { codeState = null; return [true, '']; }
+  const left = 3 - ++codeState.tries; if (left <= 0) { codeState = null; return [false, 'Wrong passcode too many times - click "Send a new code".']; }
+  return [false, `Wrong passcode - ${left} ${left === 1 ? 'try' : 'tries'} left.`];
+}
+function gmailProblem(e) {
+  const d = e.detail || '';
+  if (/SERVICE_DISABLED|accessNotConfigured|has not been used|is disabled/i.test(d))
+    return 'the Gmail API is switched off in the Google Cloud project. Kevin: open console.cloud.google.com/apis/library/gmail.googleapis.com?project=masterock-hr-514313 and click Enable, wait 2 minutes, then click "Send a new code".';
+  if (/SCOPE_INSUFFICIENT|insufficient/i.test(d))
+    return 'permission to send email was not given at sign-in. Click "Give Gmail permission" and tick the Gmail box on the Google screen.';
+  if (e.status === 403) return 'Google refused (' + (d.match(/"message":\s*"([^"]+)"/) || [, '403'])[1] + ').';
+  return e.message;
+}
+function ensurePasscode(what, unlock = true) {
+  if (unlock && Date.now() < unlockedUntil) return Promise.resolve(true);
+  return new Promise(resolve => {
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = `<div class="box" role="dialog" aria-modal="true"><h3>${unlock ? 'Passcode required' : 'Sign-in PIN'}</h3><div class="body">
+      <p>To ${esc(what)}, enter the 4-digit passcode sent to ${esc(OWNER_EMAIL)}.</p><input class="code" id="pc" inputmode="numeric" maxlength="4" autocomplete="one-time-code" aria-label="Passcode">
+      <p id="pcmsg" class="small"></p></div><div class="foot"><button class="btn ghost" id="pcsend" style="margin-right:auto">Send a new code</button><button class="btn ghost" id="pcno">Cancel</button><button class="btn gold" id="pcok">Unlock</button></div></div>`;
+    document.body.appendChild(m);
+    const say = (t, bad) => { const p = m.querySelector('#pcmsg'); p.textContent = t; p.className = 'small ' + (bad ? 'msg-err' : 'msg-ok'); };
+    const send = async () => { const b = m.querySelector('#pcsend'); b.disabled = true; say('Sending a passcode…');
+      try { await sendCode(what); say(`Passcode sent to ${OWNER_EMAIL}. It works for 10 minutes.`); }
+      catch (e) { say('Could not send the passcode: ' + gmailProblem(e), true);
+        if (/SCOPE_INSUFFICIENT|insufficient/i.test(e.detail || '')) {        // Gmail box was not ticked at sign-in: ask Google again
+          const again = document.createElement('button'); again.className = 'btn gold'; again.textContent = 'Give Gmail permission';
+          again.onclick = () => { m.remove(); resolve(false); try { sessionStorage.removeItem('hraTok'); } catch (x) {} tokenClient.requestAccessToken({ prompt: 'consent' }); };
+          m.querySelector('.foot').prepend(again);
+        } }
+      setTimeout(() => b.disabled = false, 15000); m.querySelector('#pc').focus(); };
+    const done = ok => { m.remove(); if (ok && unlock) unlockedUntil = Date.now() + 10 * 60e3; resolve(ok); };
+    const tryIt = async () => { const v = m.querySelector('#pc').value.trim(); if (!/^\d{4}$/.test(v)) return say('Enter all 4 digits.', true);
+      const [ok, msg] = await checkCode(v); if (ok) done(true); else { m.querySelector('#pc').value = ''; say(msg, true); } };
+    m.querySelector('#pcsend').onclick = send; m.querySelector('#pcno').onclick = () => done(false); m.querySelector('#pcok').onclick = tryIt;
+    m.querySelector('#pc').oninput = e => { if (e.target.value.length === 4) tryIt(); };
+    send();
+  });
+}
+
+/* ======================= Drop Box (same rules as the desktop app) ======================= */
+const ALIASES = {
+  'EMPLOYEE ID': ID, 'SL EMPLOYEE ID': ID, 'EMP ID': ID, 'SL ID': ID,
+  'NAME': 'FULL NAME', 'EMPLOYEE NAME': 'FULL NAME', 'NAME IN PASSPORT': 'NAME AS IN PASSPORT',
+  'GENDER': 'GENDER (F / M)', 'SEX': 'GENDER (F / M)',
+  'DATE OF BIRTH': 'BIRTH DATE (MM/DD/YYYY)', 'DOB': 'BIRTH DATE (MM/DD/YYYY)', 'BIRTH DATE': 'BIRTH DATE (MM/DD/YYYY)', 'BIRTHDAY': 'BIRTH DATE (MM/DD/YYYY)', 'MARITAL STATUS': 'CIVIL STATUS',
+  'MOBILE': 'LOCAL CONTACT NUMBER', 'MOBILE NUMBER': 'LOCAL CONTACT NUMBER', 'PHONE': 'LOCAL CONTACT NUMBER', 'CONTACT NUMBER': 'LOCAL CONTACT NUMBER', 'SRI LANKAN CONTACT NUMBER': 'LOCAL CONTACT NUMBER',
+  'EMAIL': 'PERSONAL EMAIL', 'E MAIL': 'PERSONAL EMAIL', 'EMAIL ADDRESS': 'PERSONAL EMAIL',
+  'ADDRESS IN SRI LANKA': 'RESIDENCE ADDRESS IN SRI LANKA', 'RESIDENT ADDRESS': 'RESIDENCE ADDRESS IN SRI LANKA', 'SRI LANKA ADDRESS': 'RESIDENCE ADDRESS IN SRI LANKA',
+  'HOME ADDRESS': 'PERMANENT ADDRESS', 'HOME COUNTRY ADDRESS': 'PERMANENT ADDRESS', 'PERMANENT HOME ADDRESS': 'PERMANENT ADDRESS',
+  'PASSPORT NO': 'PASSPORT NUMBER', 'PASSPORT': 'PASSPORT NUMBER',
+  'PASSPORT DATE OF ISSUE': 'DATE OF ISSUE (MM/DD/YYYY)', 'PASSPORT ISSUE DATE': 'DATE OF ISSUE (MM/DD/YYYY)',
+  'PASSPORT DATE OF EXPIRY': 'DATE OF EXPIRY (MM/DD/YYYY)', 'PASSPORT EXPIRY': 'DATE OF EXPIRY (MM/DD/YYYY)', 'PASSPORT EXPIRY DATE': 'DATE OF EXPIRY (MM/DD/YYYY)', 'PLACE OF ISSUE': 'PASSPORT PLACE OF ISSUE',
+  'NIC': 'NATIONAL ID NUMBER (LOCALS ONLY)', 'NIC NUMBER': 'NATIONAL ID NUMBER (LOCALS ONLY)', 'NATIONAL ID NUMBER': 'NATIONAL ID NUMBER (LOCALS ONLY)',
+  'VISA NUMBER': 'RESIDENCE VISA NUMBER', 'VISA EXPIRY': 'MOST RECENT EXPIRY DATE', 'VISA EXPIRY DATE': 'MOST RECENT EXPIRY DATE',
+  'JOIN DATE': 'MROCK /REAL JOIN DATE (MM/DD/YY)', 'DATE JOINED': 'MROCK /REAL JOIN DATE (MM/DD/YY)', 'MROCK REAL JOIN DATE': 'MROCK /REAL JOIN DATE (MM/DD/YY)',
+  'EMERGENCY CONTACT': 'EMERGENCY CONTACT NAME', 'EMERGENCY CONTACT PERSON': 'EMERGENCY CONTACT NAME', 'CONTACT PERSON': 'EMERGENCY CONTACT NAME',
+  'EMERGENCY NUMBER': 'EMERGENCY CONTACT NUMBER', 'EMERGENCY CONTACT MOBILE': 'EMERGENCY CONTACT NUMBER',
+  'BANK': 'BANK NAME', 'ACCOUNT NUMBER': 'BANK ACCOUNT NUMBER', 'ACCOUNT NO': 'BANK ACCOUNT NUMBER',
+  'EPF NO': 'EPF MEMBER NO', 'EPF NUMBER': 'EPF MEMBER NO', 'SALARY': 'BASIC SALARY (USD)', 'BASIC SALARY': 'BASIC SALARY (USD)',
+};
+const SKIP_VALUES = new Set(['', 'N/A', 'NA', '-', '--', 'NONE', 'NIL']);
+const keyOf = s => String(s ?? '').replace(/\(.*?\)|\*?required/gi, ' ').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+function similarity(a, b) {          // 0..1, like Python's difflib ratio for short labels
+  const m = a.length, n = b.length; if (!m || !n) return 0;
+  const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]); for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return 1 - d[m][n] / Math.max(m, n);
+}
+function makeMatcher() {
+  const heads = [...hdr.filter(Boolean), ...COMP.filter(h => !hdr.includes(h))];
+  const exact = {}, keys = {}; heads.forEach(h => { exact[norm(h)] = h; if (!(keyOf(h) in keys)) keys[keyOf(h)] = h; });
+  const alias = {}; Object.entries(ALIASES).forEach(([a, c]) => { if (norm(c) in exact) alias[keyOf(a)] = exact[norm(c)]; });
+  const m = label => {
+    const lab = String(label ?? '').trim(); if (!lab || lab.length > 80) return null;
+    if (norm(lab) in exact) return exact[norm(lab)];
+    const k = keyOf(lab); if (!k) return null;
+    if (k in keys) return keys[k]; if (k in alias) return alias[k];
+    let best = null, bs = 0; Object.keys(keys).forEach(kk => { const s = similarity(k, kk); if (s > bs) { bs = s; best = kk; } });
+    return bs >= 0.88 ? keys[best] : null;
+  };
+  m.exact = exact; return m;
+}
+const idFrom = name => { const mm = String(name || '').match(/\bSL[\s_-]?(\d{3,5})\b/i); return mm ? `SL-${mm[1]}` : ''; };
+function cleanValue(col, v) {
+  if (v instanceof Date) v = `${String(v.getDate()).padStart(2, '0')}/${String(v.getMonth() + 1).padStart(2, '0')}/${v.getFullYear()}`;
+  let s = String(v ?? '').replace(/\s+/g, ' ').trim(); if (typeof v === 'number' && Number.isInteger(v)) s = String(v);
+  if (SKIP_VALUES.has(s.toUpperCase())) return '';
+  if (col === 'GENDER (F / M)') { const u = s.toUpperCase(); s = { MALE: 'M', FEMALE: 'F' }[u] || ('MF'.includes(u[0] || 'X') ? u[0] : s); }
+  if (col === ID) s = idFrom(s) || s.toUpperCase();
+  return s;
+}
+function readExcel(buf, match) {
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true }), recs = [];
+  for (const name of wb.SheetNames) {
+    let rws = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: null }).filter(r => r.some(v => v !== null && v !== ''));
+    if (!rws.length) continue;
+    let tableDone = false;
+    for (let hi = 0; hi < Math.min(10, rws.length) && !tableDone; hi++) {             // (1) table: header row of DB columns incl. SL EMP ID
+      const cols = rws[hi].map(h => typeof h === 'string' ? match(h) : null);
+      if (cols.includes(ID) && cols.filter(Boolean).length >= 3) {
+        rws.slice(hi + 1).forEach(r => { const rec = {}; cols.forEach((c, i) => { if (c && i < r.length) { const v = cleanValue(c, r[i]); if (v) rec[c] = v; } }); if (rec[ID]) recs.push(rec); });
+        tableDone = true;
+      }
+    }
+    if (tableDone) continue;
+    const rec = {}, isKey = v => typeof v === 'string' && norm(v) in match.exact;          // (2) form: label | value [| DB column]
+    rws.forEach(r => {
+      const cells = r.map((v, i) => [i, v]).filter(([, v]) => v !== null && v !== ''); if (cells.length < 2) return;
+      let col = null;
+      if (isKey(cells[cells.length - 1][1]) && cells[cells.length - 1][0] > cells[0][0]) { col = match.exact[norm(cells[cells.length - 1][1])]; if (cells.length < 3) return; }
+      else if (typeof cells[0][1] === 'string') col = match(cells[0][1]);
+      if (col) { if (isKey(cells[1][1]) && cells.length < 3) return; const v = cleanValue(col, cells[1][1]); if (v && !(col in rec)) rec[col] = v; }
+    });
+    if (Object.keys(rec).length) recs.push(rec);
+  }
+  return recs;
+}
+async function readDocx(buf, match) {
+  const html = (await mammoth.convertToHtml({ arrayBuffer: buf })).value, doc = new DOMParser().parseFromString(html, 'text/html'), rec = {};
+  const put = (label, value) => { const col = match(label); if (col && !(col in rec)) { const v = cleanValue(col, value); if (v) rec[col] = v; } };
+  doc.querySelectorAll('p').forEach(p => { if (p.closest('table')) return; const mm = p.textContent.match(/^\s*([^:]{2,60})[:\-]\s*(.+?)\s*$/); if (mm) put(mm[1], mm[2]); });
+  doc.querySelectorAll('tr').forEach(tr => { const cells = []; tr.querySelectorAll('td,th').forEach(c => { const t = c.textContent.trim(); if (!cells.length || t !== cells[cells.length - 1]) cells.push(t); });
+    for (let i = 0; i + 1 < cells.length; i += 2) { const lab = cells[i].replace(/[:\s]+$/, ''); if (lab) put(lab, cells[i + 1]); } });
+  return Object.keys(rec).length ? [rec] : [];
+}
+async function analyse(files) {
+  const match = makeMatcher(), out = [];
+  for (const f of files) {
+    const fn = f.name, ext = (fn.match(/\.[^.]+$/) || [''])[0].toLowerCase(), fid = idFrom(fn);
+    try {
+      if (['.jpg', '.jpeg', '.png'].includes(ext)) {
+        if (!fid) { out.push({ file: fn, kind: 'error', msg: 'Photo file name must contain the employee ID, e.g. SL-1234.jpg' }); continue; }
+        const r = byId(fid); if (!r) { out.push({ file: fn, kind: 'error', emp: fid, msg: `${fid} is not in the database yet - add the employee first` }); continue; }
+        out.push({ file: fn, kind: 'photo', emp: fid, name: val(r, 'FULL NAME'), blob: f }); continue;
+      }
+      let recs;
+      if (['.xlsx', '.xlsm'].includes(ext)) recs = readExcel(new Uint8Array(await f.arrayBuffer()), match);
+      else if (ext === '.docx') recs = await readDocx(await f.arrayBuffer(), match);
+      else if (['.doc', '.xls'].includes(ext)) { out.push({ file: fn, kind: 'error', emp: fid, msg: 'Old Office format - open it and save as .docx / .xlsx first' }); continue; }
+      else { out.push({ file: fn, kind: 'error', emp: fid, msg: 'Not a picture, Excel or Word file' }); continue; }
+      if (!recs.length) { out.push({ file: fn, kind: 'error', emp: fid, msg: 'No employee information found in this file' }); continue; }
+      for (const rec of recs) {
+        const emp = rec[ID] || fid;
+        if (!emp) { out.push({ file: fn, kind: 'error', msg: 'No employee ID in the file name or the file' }); continue; }
+        if (fid && rec[ID] && norm(rec[ID]) !== norm(fid) && recs.length === 1) { out.push({ file: fn, kind: 'error', emp: fid, msg: `File name says ${fid} but the file says ${rec[ID]} - check which is right` }); continue; }
+        rec[ID] = emp;
+        const cur = byId(emp), allowed = {}, skipped = [];
+        Object.entries(rec).forEach(([c, v]) => (canSeeComp || !COMP.includes(c)) ? allowed[c] = v : skipped.push(c));
+        if (!cur) { out.push({ file: fn, kind: 'new', emp, name: allowed['FULL NAME'] || '', changes: Object.entries(allowed).map(([c, v]) => [c, '', v]), skipped, record: allowed }); continue; }
+        const ch = [];
+        Object.entries(allowed).forEach(([c, v]) => {
+          const old = val(cur, c); if (c === ID || old.toUpperCase() === v.toUpperCase()) return;
+          if (old && old === old.toUpperCase() && /[A-Za-z]/.test(old) && !c.includes('EMAIL')) v = v.toUpperCase();     // follow the database's capitals
+          ch.push([c, old, v]);
+        });
+        out.push({ file: fn, kind: 'update', emp, name: val(cur, 'FULL NAME'), changes: ch, skipped, msg: ch.length ? '' : 'Nothing new - the database already has these values' });
+      }
+    } catch (e) { out.push({ file: fn, kind: 'error', emp: fid, msg: 'Could not read the file: ' + e.message }); }
+  }
+  return out;
+}
+async function preparePhoto(file) {        // JPEG, upright, max 1200 px
+  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }), s = Math.min(1, 1200 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise(res => c.toBlob(res, 'image/jpeg', 0.9));
+}
+async function uploadPhoto(emp, jpeg) {
+  const q = `'${PHOTOS_FOLDER}' in parents and trashed=false and name contains '${emp}'`;
+  const found = ((await (await api(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`)).json()).files || [])
+    .filter(f => f.name.replace(/\.[^.]+$/, '').toUpperCase() === emp.toUpperCase());
+  try {
+    if (found.length) await api(`https://www.googleapis.com/upload/drive/v3/files/${found[0].id}?uploadType=media`, { method: 'PATCH', body: jpeg, headers: { 'Content-Type': 'image/jpeg' } });
+    else {
+      const meta = JSON.stringify({ name: `${emp}.jpg`, parents: [PHOTOS_FOLDER] });
+      const body = new Blob([`--b\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--b\r\nContent-Type: image/jpeg\r\n\r\n`, jpeg, '\r\n--b--']);
+      await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', body, headers: { 'Content-Type': 'multipart/related; boundary=b' } });
+    }
+  } catch (e) { if (e.status === 403) throw new Error("No permission to change photos in the shared Drive folder - ask Kevin for edit access to 'Masterock HR Photos'."); throw e; }
+  photoIndex = null; delete photoCache[emp];
+}
+
+let dropItems = [];
+function pageDropbox() {
+  $('#page').innerHTML = `<div class="panel"><h2>Drop Box - update employees from files</h2><div class="body">
+      <div class="drop" id="dz" tabindex="0" role="button" aria-label="Drop files here or choose files"><b>Drop files here</b>
+        <div class="muted" style="margin:6px 0 10px">Photos (.jpg .png) · Excel (.xlsx) · Word (.docx) - name each file with the employee ID, e.g. SL-1234 passport details.docx</div>
+        <span class="btn ghost">or choose files…</span><input type="file" id="fp" multiple accept=".jpg,.jpeg,.png,.xlsx,.xlsm,.docx,.doc,.xls" hidden></div></div></div>
+    <div class="panel"><h2>Changes found (untick anything you do not want)</h2><div class="body" id="dlist"></div></div>
+    <div class="bar"><span class="info" id="dinfo"></span><button class="btn ghost" id="dclear">Clear</button><button class="btn gold" id="dapply" disabled>Apply updates to database</button></div>`;
+  const dz = $('#dz'), add = async files => { if (!files.length) return; status('Reading files…'); dropItems = dropItems.concat(await analyse([...files])); renderDrop(); status(''); };
+  dz.onclick = () => $('#fp').click(); dz.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#fp').click(); } };
+  $('#fp').onchange = e => { add(e.target.files); e.target.value = ''; };
+  dz.ondragover = e => { e.preventDefault(); dz.classList.add('hot'); }; dz.ondragleave = () => dz.classList.remove('hot');
+  dz.ondrop = e => { e.preventDefault(); dz.classList.remove('hot'); add(e.dataTransfer.files); };
+  $('#dclear').onclick = () => { dropItems = []; renderDrop(); };
+  $('#dapply').onclick = applyDrop;
+  renderDrop();
+}
+function renderDrop() {
+  const label = { update: 'UPDATE', new: 'NEW EMPLOYEE', photo: 'NEW PHOTO', error: 'CANNOT USE' };
+  $('#dlist').innerHTML = dropItems.length ? dropItems.map((it, i) => `<div class="change-item"><div class="head ${it.kind === 'error' ? 'err' : it.kind === 'new' ? 'new' : ''}">
+      ${it.kind === 'photo' ? `<input type="checkbox" data-i="${i}" checked aria-label="Use this photo">` : ''}${label[it.kind]} · ${esc(it.emp || '')} ${esc(it.name || '')}<span class="muted small" style="margin-left:auto">${esc(it.file)}</span></div>
+      ${it.kind === 'error' || (it.kind === 'update' && !it.changes.length) ? `<div class="body small">${esc(it.msg)}</div>` : ''}
+      ${it.kind === 'photo' ? `<div class="body small">Replace the employee's photo</div>` : ''}
+      ${it.changes && it.changes.length ? `<table><thead><tr><th></th><th>Field</th><th>Current value</th><th>New value</th></tr></thead><tbody>${it.changes.map(([c, o, n], j) =>
+        `<tr><td><input type="checkbox" data-i="${i}" data-j="${j}" checked aria-label="Apply ${esc(c)}"></td><td>${esc(title(c))}</td><td>${esc(o) || '<span class="muted">—</span>'}</td><td><b>${esc(n)}</b></td></tr>`).join('')}</tbody></table>` : ''}
+      ${it.skipped && it.skipped.length ? `<div class="body small muted">Not changed (salary group only): ${esc(it.skipped.map(title).join(', '))}</div>` : ''}</div>`).join('')
+    : '<div class="empty">Drop files above. Nothing is saved until you click Apply.</div>';
+  $('#dlist').querySelectorAll('input[type=checkbox]').forEach(c => c.onchange = dropState); dropState();
+}
+function dropPlan() {
+  const plan = [];
+  dropItems.forEach((it, i) => {
+    if (it.kind === 'photo' && $(`#dlist input[data-i="${i}"]:not([data-j])`)?.checked) plan.push({ it, cols: null });
+    if (it.kind === 'update' || it.kind === 'new') { const cols = it.changes.filter((_, j) => $(`#dlist input[data-i="${i}"][data-j="${j}"]`)?.checked).map(c => c[0]); if (cols.length) plan.push({ it, cols }); }
+  });
+  return plan;
+}
+function dropState() {
+  const usable = dropItems.filter(i => i.kind !== 'error').length, n = dropPlan().reduce((a, p) => a + (p.cols ? p.cols.length : 1), 0);
+  $('#dinfo').textContent = dropItems.length ? `${dropItems.length} file item(s): ${usable} usable, ${dropItems.length - usable} need attention · ${n} change(s) ticked` : '';
+  $('#dapply').disabled = !n;
+}
+async function applyDrop() {
+  const plan = dropPlan(); if (!plan.length) return;
+  if (plan.some(p => p.cols && p.cols.some(c => COMP.includes(c))) && !(await ensurePasscode('change salary / allowances'))) return;
+  const summary = plan.map(p => `<li>${esc(p.it.emp)} ${esc(p.it.name || '')}: ${p.cols === null ? 'new photo' : p.it.kind === 'new' ? 'NEW EMPLOYEE' : p.cols.length + ' field(s)'}</li>`).join('');
+  if (!(await modal('Apply updates', `Save these changes to the database?<ul>${summary}</ul>`, [['Cancel', 'ghost', false], ['Save', 'gold', true]]))) return;
+  const done = [], errs = []; $('#dapply').disabled = true; status('Saving…');
+  for (const { it, cols } of plan) {
+    try {
+      if (cols === null) { await uploadPhoto(it.emp, await preparePhoto(it.blob)); done.push(`${it.emp}: photo replaced`); }
+      else if (it.kind === 'new') { const rec = Object.fromEntries(cols.map(c => [c, it.record[c]])); rec[ID] = it.emp; await addEmployee(rec); done.push(`${it.emp}: added as a new employee (${cols.length} fields)`); }
+      else { const ch = Object.fromEntries(it.changes.filter(c => cols.includes(c[0])).map(c => [c[0], c[2]])); await updateEmployee(byId(it.emp), ch); done.push(`${it.emp}: ${cols.length} field(s) updated`); }
+    } catch (e) { if (e.message === 'signed out') return; errs.push(`${it.emp} (${it.file}): ${e.message}`); }
+  }
+  await modal('Drop Box', (done.length ? `<b>Saved:</b><ul>${done.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : 'Nothing was saved.') +
+    (errs.length ? `<b class="msg-err">Problems:</b><ul>${errs.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''), [['OK', 'gold', 1]]);
+  status(`Drop Box: ${done.length} update(s) saved${errs.length ? `, ${errs.length} problem(s)` : ''}`);
+  if (!errs.length) dropItems = dropItems.filter(i => i.kind === 'error');
+  renderDrop();
+}
+
+/* ======================= Alerts ======================= */
+function pageAlerts() {
+  const act = rows.filter(r => norm(r['ACTIVE/ INACTIVE']) === 'ACTIVE'), now = new Date(), same = d => d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  const exp = (k, within) => act.map(r => ({ r, d: parseDate(r[k]) })).filter(x => x.d && daysTo(x.d) <= within).sort((a, b) => a.d - b.d);
+  const groups = [['Visas expired or due in 60 days', exp('MOST RECENT EXPIRY DATE', 60), 'MOST RECENT EXPIRY DATE'], ['Passports expired or due in 6 months', exp('DATE OF EXPIRY (MM/DD/YYYY)', 180), 'DATE OF EXPIRY (MM/DD/YYYY)'],
+    ['Joined this month', rows.map(r => ({ r, d: parseDate(r['MROCK /REAL JOIN DATE (MM/DD/YY)']) })).filter(x => same(x.d)), 'MROCK /REAL JOIN DATE (MM/DD/YY)', 1],
+    ['Leaving / left this month', rows.map(r => ({ r, d: parseDate(r['REAL RESIGNATION DATE (MM/DD/YYYY)']) })).filter(x => same(x.d)), 'REAL RESIGNATION DATE (MM/DD/YYYY)', 1]];
+  $('#page').innerHTML = `<div class="stat"><div><b>${act.length}</b><span class="muted small">Active staff</span></div><div><b>${groups[0][1].length}</b><span class="muted small">Visas due</span></div><div><b>${groups[1][1].length}</b><span class="muted small">Passports due</span></div></div>` +
+    groups.map(([t, items, key, info]) => `<div class="panel"><h2>${esc(t)} · ${items.length}</h2>${items.length ? `<div class="tbl-wrap" style="max-height:none;border:0"><table><thead><tr><th>Emp ID</th><th>Name</th><th>Department</th><th>Date</th><th></th></tr></thead><tbody>${items.map(x => {
+      const n = daysTo(x.d), pill = info ? '' : `<span class="pill ${n < 0 ? 'no' : n <= 30 ? 'warn' : 'ok'}">${n < 0 ? 'Expired' : n === 0 ? 'Today' : n + ' days'}</span>`;
+      return `<tr class="click" data-id="${esc(x.r[ID])}"><td>${esc(x.r[ID])}</td><td>${esc(val(x.r, 'FULL NAME'))}</td><td>${esc(val(x.r, 'DEPARTMENT (INTERNAL)'))}</td><td>${esc(x.r[key])}</td><td>${pill}</td></tr>`; }).join('')}</tbody></table></div>`
+      : '<div class="empty">Nothing here</div>'}</div>`).join('');
+  $('#page').querySelectorAll('tr.click').forEach(tr => tr.onclick = () => { current = byId(tr.dataset.id); go('lookup'); });
+}
+
+/* ======================= Forms (PDFs made in the browser; engine loads on first use) ======================= */
+window.HRA_ASSETS = window.HRA_ASSETS || 'hra-assets/';
+let formsReady = null;
+function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Could not load ' + src)); document.head.appendChild(s); }); }
+function loadForms() {
+  if (!formsReady) formsReady = (async () => {
+    status('Loading the form engine…');
+    await loadScript('https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+    await loadScript(window.HRA_ASSETS + 'hra-forms.js?v=3');
+    await HRAForms.init(); status('');
+  })().catch(e => { formsReady = null; throw e; });
+  return formsReady;
+}
+/* ======================= Phase 3: reports (CPCEC + HR Dashboard), same rules as the desktop app ======================= */
+let reportsReady = null;
+function loadReports() {
+  if (!reportsReady) reportsReady = (async () => {
+    status('Loading the report engine…');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js');
+    await loadScript(window.HRA_ASSETS + 'hra-reports.js?v=1'); status('');
+  })().catch(e => { reportsReady = null; throw e; });
+  return reportsReady;
+}
+async function tabValues(name) { return (await (await api(sheetUrl(SHEET_ID, `'${name}'`))).json()).values || []; }
+async function writeTabCells(name, cells) {            // cells: [[row, col(1-based), value]]
+  if (!cells.length) return;
+  const data = cells.map(([r, c, v]) => ({ range: `'${name}'!${colLetter(c - 1)}${r}`, values: [[v === '' ? '' : cellValue(v)]] }));
+  await api(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate`, { method: 'POST', body: JSON.stringify({ valueInputOption: 'RAW', data }) });
+}
+async function appendTabRows(name, rowsToAdd) {
+  if (!rowsToAdd.length) return;
+  await api(sheetUrl(SHEET_ID, `'${name}'!A1:V`) + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: JSON.stringify({ values: rowsToAdd }) });
+}
+async function runReport(btn, label, fn) {
+  const old = btn.textContent; btn.disabled = true; btn.textContent = label;
+  try { await loadReports(); await fn(); } catch (e) { console.error(e); if (e.message !== 'signed out') modal('Something went wrong', esc(e.message), [['OK', 'gold', 1]]); }
+  finally { btn.disabled = false; btn.textContent = old; status(''); }
+}
+
+function pageCpcec() {
+  $('#page').innerHTML = `<div class="panel"><h2>CPCEC Report <span class="muted small">(MROCK expats - business visa holders excluded)</span></h2><div class="body">
+    <div class="row-flex"><input class="search" id="cq" placeholder="Search name, passport, visa no …" style="flex:1 1 240px">
+      <select id="cst" style="flex:0 0 170px"><option>All</option><option>Active</option><option>Pending arrival</option><option>Cancelled</option></select>
+      <button class="btn ghost" id="crel">Reload</button><button class="btn gold" id="cxl">Generate CPCEC Report (Excel)</button><button class="btn ghost" id="csync">Sync with Employee Database</button></div>
+    <p class="small muted" id="ccount">Loading…</p>
+    <p class="small muted"><span style="background:#CFE2F3;color:#123;padding:1px 6px;border-radius:3px">Blue</span> = resigned / cancelled · <span style="background:#FCE4D6;color:#321;padding:1px 6px;border-radius:3px">Peach</span> = pending arrival · no colour = active</p></div></div>
+    <div class="panel"><div class="body" style="overflow:auto;max-height:70vh" id="ctab"></div></div>`;
+  let hdr = [], data = [];
+  const show = () => {
+    const q = norm($('#cq').value), st = $('#cst').value;
+    const list = data.filter(r => (!q || norm(r.join(' ')).includes(q)) && (st === 'All' || HRAReports.cpcecStatus(r) === st));
+    const n = Math.max(hdr.length, ...list.map(r => r.length), 0);
+    $('#ctab').innerHTML = `<table class="tbl"><thead><tr>${Array.from({ length: n }, (_, j) => `<th>${esc(hdr[j] || '')}</th>`).join('')}</tr></thead><tbody>` +
+      list.map(r => { const s = HRAReports.cpcecStatus(r), bg = s === 'Cancelled' ? '#CFE2F3' : s === 'Pending arrival' ? '#FCE4D6' : '';
+        return `<tr${bg ? ` style="background:${bg};color:#1b1b1b"` : ''}>${Array.from({ length: n }, (_, j) => `<td>${esc(text(r[j]))}</td>`).join('')}</tr>`; }).join('') + '</tbody></table>';
+    $('#ccount').textContent = `${list.length} of ${data.length} row(s)`;
+  };
+  const load = () => runReport($('#crel'), 'Loading…', async () => {
+    const vals = await tabValues('CPCEC Report');
+    hdr = (vals[2] || []).map(h => String(h).trim()); data = vals.slice(3).filter(r => r.some(x => String(x ?? '').trim())); show();
+  });
+  $('#cq').oninput = show; $('#cst').onchange = show; $('#crel').onclick = load;
+  $('#cxl').onclick = () => runReport($('#cxl'), 'Creating…', async () => {
+    const vals = await tabValues('CPCEC Report'), res = await HRAReports.cpcecExcel(vals);
+    const d = new Date(), name = `CPCEC Report ${d.getDate()} ${d.toLocaleString('en-GB', { month: 'long' })} ${d.getFullYear()}.xlsx`;
+    saveBytes(name, res.bytes, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); toast(`Saved ${name} (${res.rows} rows)`);
+  });
+  $('#csync').onclick = () => runReport($('#csync'), 'Checking…', async () => {
+    await loadData(); const vals = await tabValues('CPCEC Report');
+    const { updates, newRows, log } = HRAReports.cpcecPlan(vals, rows);
+    if (!log.length) { await modal('CPCEC', 'The CPCEC report is already up to date.', [['OK', 'gold', 1]]); return; }
+    const ok = await modal('CPCEC sync', `<p>These changes will be written to the CPCEC Report:</p><pre style="white-space:pre-wrap;max-height:50vh;overflow:auto;font-size:12px">${esc(log.slice(0, 60).join('\n'))}${log.length > 60 ? '\n…' : ''}</pre>`,
+      [['Cancel', 'ghost', 0], [`Save ${log.length} change(s)`, 'gold', 1]]);
+    if (!ok) return;
+    await writeTabCells('CPCEC Report', updates); await appendTabRows('CPCEC Report', newRows);
+    toast(`CPCEC report: ${log.length} change(s) saved`); load();
+  });
+  load();
+}
+
+function pageDashboard() {
+  $('#page').innerHTML = `<div class="panel"><h2>HR Dashboard</h2><div class="body">
+    <p>Everything on the dashboard comes from the Employee Database automatically, except the numbers below (Manila figures, attendance, government contributions). Update them, click Save, then Generate.</p>
+    <div class="row-flex" style="justify-content:flex-end"><button class="btn ghost" id="dsave">Save numbers</button><button class="btn gold" id="dgo">Generate dashboard</button></div>
+    <div id="dres" class="small"></div></div></div>
+    <div class="panel"><div class="body" style="overflow:auto" id="dtab">Loading…</div></div>`;
+  let vals = [], keys = [];
+  const load = () => runReport(document.createElement('button'), '', async () => {      // own throw-away button: doesn't clash with Save's label
+    vals = await tabValues('Dashboard Inputs');
+    const width = Math.max(0, ...vals.map(r => r.length)); vals = vals.map(r => r.concat(new Array(width - r.length).fill('')));
+    keys = vals.map((r, i) => [i + 1, r]).filter(([, r]) => r.length > 2 && HRAReports.isUpperKey(String(r[0]).trim()) && String(r[0]).trim() !== 'KEY');
+    $('#dtab').innerHTML = `<table class="tbl"><thead><tr><th>Item</th><th>Value</th><th>Notes</th></tr></thead><tbody>` +
+      keys.map(([rn, r], i) => `<tr><td>${esc(text(r[1]))}</td><td><input data-i="${i}" value="${esc(text(r[2]))}" style="width:110px"></td><td class="muted">${esc(text(r[3] ?? ''))}</td></tr>`).join('') + '</tbody></table>';
+  });
+  $('#dsave').onclick = () => runReport($('#dsave'), 'Saving…', async () => {
+    const cells = [];
+    document.querySelectorAll('#dtab input').forEach(inp => { const [rn, r] = keys[+inp.dataset.i], v = inp.value.trim(); if (v !== text(r[2])) cells.push([rn, 3, v]); });
+    if (!cells.length) { toast('No numbers were changed.'); return; }
+    await writeTabCells('Dashboard Inputs', cells); toast(`Saved ${cells.length} dashboard number(s)`); load();
+  });
+  $('#dgo').onclick = () => runReport($('#dgo'), 'Creating…', async () => {
+    await loadData(); const inp = await tabValues('Dashboard Inputs');
+    const res = await HRAReports.dashboard(rows, inp), s = res.summary;
+    const url = URL.createObjectURL(new Blob([res.html], { type: 'text/html' }));
+    $('#dres').innerHTML = `<p class="msg-ok">Dashboard created: Sri Lanka ${s.SL} (MR ${s.MR}, PC ${s.PC}), Manila ${s.MNL}${res.warn.length ? ` · ${res.warn.length} template warning(s)` : ''}</p>
+      <div class="row-flex"><a class="btn gold" href="${url}" target="_blank" rel="noopener">Open dashboard</a><a class="btn ghost" href="${url}" download="${esc(res.name)}">Download (${esc(res.name)})</a></div>`;
+  });
+  load();
+}
+
+function saveBytes(name, bytes, type = 'application/pdf') {
+  const url = URL.createObjectURL(new Blob([bytes], { type })), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+async function busyRun(btn, label, fn) {
+  const old = btn.textContent; btn.disabled = true; btn.textContent = label;
+  try { await loadForms(); await fn(); } catch (e) { console.error(e); if (e.message !== 'signed out') modal('Something went wrong', esc(e.message), [['OK', 'gold', 1]]); }
+  finally { btn.disabled = false; btn.textContent = old; status(''); }
+}
+/* employee picker used by every form page */
+function picker(el, onPick, button = 'Find') {
+  el.innerHTML = `<div class="row-flex"><input class="search" placeholder="Employee ID (SL-1234, M0123) or name" autocomplete="off"><button class="btn gold">${esc(button)}</button>
+    <button class="btn ghost">Use employee from Lookup</button></div><div class="small msg-err"></div><div class="hits"></div>`;
+  const [q] = el.querySelectorAll('input'), [find, cur] = el.querySelectorAll('button'), msg = el.querySelector('.msg-err'), hits = el.querySelector('.hits');
+  const run = () => { const r = findRows(q.value); hits.innerHTML = ''; msg.textContent = '';
+    if (!r.length) { msg.textContent = 'No employee found.'; return; }
+    if (r.length === 1) return onPick(r[0]);
+    hits.innerHTML = r.slice(0, 50).map(x => `<button class="hit" data-id="${esc(x[ID])}">${esc(x[ID])}  ·  ${esc(val(x, 'FULL NAME'))}  (${esc(val(x, 'COMPANY'))})</button>`).join('');
+    hits.querySelectorAll('.hit').forEach(b => b.onclick = () => { hits.innerHTML = ''; onPick(byId(b.dataset.id)); }); };
+  find.onclick = run; q.onkeydown = e => { if (e.key === 'Enter') run(); };
+  cur.onclick = () => current ? onPick(current) : (msg.textContent = 'Pick an employee in Employee Lookup first.');
+}
+const whoLine = r => `${r[ID]}  ${val(r, 'FULL NAME')}  ·  ${val(r, 'COMPANY')}  ·  ${val(r, 'TYPE (EXPAT / LOCAL)')}`;
+function formPage(titleText, optionsHtml, buttonsHtml, onLoad) {
+  $('#page').innerHTML = `<div class="panel"><h2>${esc(titleText)}</h2><div class="body"><div id="pick"></div><b id="who" style="display:block;margin-top:8px;font-size:15px">No employee selected</b></div></div>
+    ${optionsHtml}<div class="bar"><span class="info" id="finfo"></span>${buttonsHtml}</div>`;
+  let row = null;
+  const load = r => { row = r; current = r; $('#who').textContent = whoLine(r); document.querySelectorAll('.bar .btn').forEach(b => b.disabled = false); onLoad && onLoad(r); };
+  picker($('#pick'), load); document.querySelectorAll('.bar .btn').forEach(b => b.disabled = true);
+  if (current) load(current);
+  return () => row;
+}
+const INFO_COMPANIES = ['Masterock', 'Whiterain', 'Imperium', 'Blueline', 'Netease', 'Nexzen'];
+function infoCompanyFor(c) { c = norm(c); for (const n of INFO_COMPANIES) if (c.includes(n.toUpperCase()) || (n === 'Masterock' && ['MROCK', 'MR'].includes(c))) return n; return 'Masterock'; }
+
+function pageInfoForm() {
+  const row = formPage('Employee Information Form',
+    `<div class="panel"><h2>Form options</h2><div class="body"><div class="row-flex"><label class="muted" for="icomp">Company</label>
+      <select id="icomp" style="flex:0 1 260px">${INFO_COMPANIES.map(c => `<option>${c}</option>`).join('')}</select></div>
+      <p class="small muted">Printed at the top of the form and in the declaration. It is set from the employee's company - change it if needed. The PDF keeps a Company drop-down, so it can still be changed when the form is opened.</p></div></div>
+     <div class="panel"><h2>What gets filled in</h2><div class="body small muted">Name (first / middle / last), English name, date and place of birth, home and Sri Lanka addresses, gender and marital status ticks, contact number, e-mail, nationality, passport details, emergency contact name and number.<br><br>Left blank for the employee (not in the database): religion, emergency contact relationship / address / e-mail, other number, health declaration, signature and date.</div></div>`,
+    `<button class="btn gold" id="go">Create information form (PDF)</button>`, r => $('#icomp').value = infoCompanyFor(r.COMPANY));
+  $('#go').onclick = () => busyRun($('#go'), 'Creating…', async () => {
+    const res = await HRAForms.fill(row(), ['MR_INFO'], $('#icomp').value);
+    if (res.errs.length) throw new Error(res.errs.join('\n'));
+    saveBytes(res.files[0].name, res.files[0].bytes); toast('Saved ' + res.files[0].name);
+  });
+}
+function pageVisa() {
+  const cats = ['Private Sector', 'Board of Investment (BOI)', 'Public Sector', 'Other - Port City (as printed)'];
+  const row = formPage('Residence Visa Form (A/IM 35 + Photo Capturing Paper)',
+    `<div class="panel"><h2>Form options</h2><div class="body"><div class="row-flex"><label class="muted" for="vcat">16(a) Category</label>
+      <select id="vcat" style="flex:0 1 320px">${cats.map(c => `<option>${c}</option>`).join('')}</select></div><p id="vnote" class="small msg-err"></p>
+      <p class="small muted">MROCK staff: the Port City employer details printed on the form are replaced with Masterock's. First issuance / Extension is ticked from the residence visa number on file. Signature and date stay blank.</p></div></div>`,
+    `<button class="btn gold" id="go">Create visa form (PDF)</button>`,
+    r => { $('#vcat').value = norm(r.COMPANY) === 'PCL' ? 'Other - Port City (as printed)' : 'Private Sector';
+           $('#vnote').textContent = norm(r['EXPAT / LOCAL']) === 'LOCAL' ? 'This employee is LOCAL - the residence visa form is normally for expats only.' : ''; });
+  $('#go').onclick = () => busyRun($('#go'), 'Creating…', async () => { const res = await HRAForms.residenceVisa(row(), $('#vcat').value); saveBytes(res.name, res.bytes); toast('Saved ' + res.name); });
+}
+let epfValues = null;
+async function getEpfValues() { if (!epfValues) epfValues = (await (await api(sheetUrl(SHEET_ID, "'EPF ETF Data'"))).json()).values || []; return epfValues; }
+function pageEpf() {
+  const row = formPage('EPF / ETF Claims (Form K and Form VI)', `<div class="panel"><h2>Contributions on file</h2><div class="body" id="einfo">Pick an employee.</div></div>`,
+    `<button class="btn gold" id="gk">EPF claim - Form K (PDF)</button><button class="btn gold" id="gv">ETF claim - Form VI (PDF)</button>`,
+    async r => {
+      $('#einfo').textContent = 'Loading contributions…';
+      try { await loadForms(); const f = HRAForms.epfFacts(r, await getEpfValues()), ym = k => `${Math.floor(k / 100)}/${String(k % 100).padStart(2, '0')}`;
+        const ep = Object.keys(f.epf).map(Number).sort((a, b) => a - b), et = Object.keys(f.etf).map(Number).sort((a, b) => a - b), dmy_ = d => d ? `${String(d.d).padStart(2, '0')}/${String(d.m).padStart(2, '0')}/${d.y}` : '';
+        $('#einfo').innerHTML = [`<b>${esc(f.emp_id)}  ${esc(f.full)}</b>`, `EPF / ETF member no: <b>${esc(f.member || '-')}</b>`,
+          ...(f.member ? [`EPF C-Form months on file: <b>${ep.length}</b>${ep.length ? ` (${ym(ep[0])} - ${ym(ep[ep.length - 1])})` : ''}`,
+                          `ETF return months on file: <b>${et.length}</b>${et.length ? ` (${ym(et[0])} - ${ym(et[et.length - 1])})` : ''}`,
+                          `Name in EPF records: ${esc(f.epf_name || '-')}  ·  ETF: ${esc(f.etf_name || '-')}`]
+                       : ['<span class="msg-err">No EPF MEMBER NO in the database - add it on Employee Update first.</span>']),
+          `Join: ${dmy_(f.join) || '-'}  ·  End: ${dmy_(f.end) || (f.active ? 'still active' : '-')}  ·  Reason: ${esc(f.reason || '-')}`,
+          `Bank: ${esc(f.bank || '-')}  ·  Account: ${esc(f.acc || '-')}  ·  Branch: ${esc(f.branch || '-')}`].join('<br>');
+      } catch (e) { $('#einfo').textContent = 'Could not read the EPF ETF Data tab: ' + e.message; }
+    });
+  const make = (which, btn) => busyRun(btn, 'Creating…', async () => { const res = await HRAForms.claim(which, row(), await getEpfValues()); saveBytes(res.name, res.bytes); toast('Saved ' + res.name); });
+  $('#gk').onclick = () => make('K', $('#gk')); $('#gv').onclick = () => make('VI', $('#gv'));
+}
+function pageCoe() {
+  const row = formPage('Certificate of Employment', `<div class="panel"><h2>Preview</h2><div class="body" id="cprev">Pick an employee.</div><div class="body msg-err" id="cwarn"></div></div>`,
+    `<button class="btn gold" id="go">Create certificate (PDF)</button>`,
+    async r => { await loadForms(); const { f, paras, missing } = HRAForms.coeWording(r);
+      $('#cprev').innerHTML = `<p><b>${esc(f.emp_name)}</b><br>${esc(f.emp_addr)}<br>Mobile: ${esc(f.emp_mob)}</p><p class="muted">${esc(f.emp_id)}  ·  ${f.active ? 'ACTIVE - "up to the present"' : 'INACTIVE - join date and end date'}</p>
+        <h3 style="text-align:center">CERTIFICATE OF EMPLOYMENT</h3><p><b>TO WHOM IT MAY CONCERN:</b></p>${paras.map(p => `<p>${esc(p)}</p>`).join('')}`;
+      $('#cwarn').textContent = missing.length ? 'Missing in the database: ' + missing.join(', ') + ' - fix it on Employee Update first.' : ''; });
+  $('#go').onclick = () => busyRun($('#go'), 'Creating…', async () => { const res = await HRAForms.coePdf(row()); saveBytes(res.name, res.bytes); toast('Saved ' + res.name + ' - print, sign and stamp it.'); });
+}
+let photoPeople = [];
+function pageIdPhotos() {
+  $('#page').innerHTML = `<div class="panel"><h2>ID Photos (35 x 45 mm, 4 copies each)</h2><div class="body"><div id="pick"></div></div></div>
+    <div class="panel"><h2>Employees on this sheet</h2><div class="body"><div id="plist" class="hits" style="max-height:none"></div>
+      <div class="row-flex" style="margin-top:8px"><button class="btn ghost" id="pclear">Clear</button></div></div></div>
+    <div class="bar"><span class="info">Print the PDF at "Actual size" / 100% so the photos come out exactly 35 x 45 mm.</span><button class="btn gold" id="go">Create photo sheet (PDF)</button></div>`;
+  const render = () => { $('#plist').innerHTML = photoPeople.length ? photoPeople.map((p, i) => `<div class="hit" style="display:flex;justify-content:space-between;cursor:default">${esc(p[0])}  ${esc(p[1])}<button class="btn ghost" data-rm="${i}" style="padding:2px 10px">Remove</button></div>`).join('') : '<div class="muted">Add employees with the search above.</div>';
+    $('#plist').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { photoPeople.splice(+b.dataset.rm, 1); render(); }); };
+  picker($('#pick'), r => { if (!photoPeople.some(p => p[0] === r[ID])) photoPeople.push([r[ID], val(r, 'NAME AS IN PASSPORT') || val(r, 'FULL NAME').replace(/,/g, '')]); render(); }, 'Add');
+  $('#pclear').onclick = () => { photoPeople = []; render(); };
+  $('#go').onclick = () => { if (!photoPeople.length) return toast('Add at least one employee first.');
+    busyRun($('#go'), 'Creating…', async () => {
+      const res = await HRAForms.idPhotos(photoPeople, async id => { const u = await photoUrl(id); return u ? await (await fetch(u)).blob() : null; });
+      saveBytes(res.name, res.bytes); toast('Saved ' + res.name + (res.missing.length ? ' - no photo on file for: ' + res.missing.join(', ') : ''), 5000); }); };
+  render();
+}
+function pagePcForms() {
+  const labels = { INFO: 'PC 001 - Info Form', IMMIGRATION: 'PC 002 - Immigration (expats only)', ABH: 'PC 003 - ABH Form', ACCOUNT: 'Account Opening Application',
+    EDD: 'EDD Form', FATCA: 'FATCA Declaration', ERD: 'Employee Relationship Disclosure (ERD)', CHECKLIST: 'Employee Checklist (MR / PCL)' };
+  const row = formPage('PC Forms', `<div class="panel"><h2>Forms to fill</h2><div class="body"><div class="fields">${Object.entries(labels).map(([k, l]) =>
+      `<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-k="${k}" checked> ${esc(l)}</label>`).join('')}</div>
+      <p class="small muted">Signatures and signing dates are left blank. The Immigration form is skipped for local staff. The forms download together as one ZIP file.</p></div></div>`,
+    `<button class="btn gold" id="go">Fill selected forms</button>`);
+  $('#go').onclick = () => { const keys = [...document.querySelectorAll('[data-k]:checked')].map(c => c.dataset.k); if (!keys.length) return toast('Tick at least one form.');
+    busyRun($('#go'), 'Filling…', async () => {
+      const res = await HRAForms.fill(row(), keys);
+      if (!res.files.length) throw new Error(['No forms were filled.', ...res.notes, ...res.errs].join('\n'));
+      const zip = new JSZip(), dir = zip.folder(res.folder); res.files.forEach(f => dir.file(f.name, f.bytes));
+      saveBytes(`${res.folder} - PC Forms.zip`, await zip.generateAsync({ type: 'uint8array' }), 'application/zip');
+      modal('PC forms filled', `${res.files.length} form(s) filled and downloaded as one ZIP file.` + res.notes.map(n => `<br>${esc(n)}`).join('') + res.errs.map(n => `<br><span class="msg-err">ERROR ${esc(n)}</span>`).join(''), [['OK', 'gold', 1]]);
+    }); };
+}
+
+initAuth();
+</script>
+</body>
+</html>

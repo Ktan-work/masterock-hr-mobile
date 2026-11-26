@@ -129,6 +129,23 @@ tbody tr.click { cursor: pointer; } tbody tr.click:hover td { background: #fff6d
   header.band .who { display: none; }
   .tiles { grid-template-columns: 1fr; }
 }
+/* phones: nothing wider than the screen */
+@media (max-width: 600px) {
+  html, body { overflow-x: hidden; }
+  #app, .shell, #page, .panel { max-width: 100vw; }
+  header.band { flex-wrap: wrap; gap: 8px; }
+  header.band h1 { font-size: 13px; letter-spacing: 1.5px; flex: 1 1 60%; }
+  header.band .sp { display: none; }
+  header.band .btn { padding: 6px 10px; font-size: 13px; }
+  .row-flex > input, .row-flex > select { min-width: 0; flex: 1 1 100%; }
+  .row-flex > .btn { flex: 1 1 auto; }
+  .field { grid-template-columns: 1fr; gap: 2px; }
+  .bar { flex-wrap: wrap; } .bar .info { flex: 1 1 100%; }
+  .bar .btn { flex: 1 1 auto; }
+  dl.kv { grid-template-columns: 1fr; } dl.kv dd { margin-bottom: 6px; }
+  .splash h1 { font-size: 26px; letter-spacing: 3px; }
+  .stat { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
@@ -235,13 +252,37 @@ function initAuth() {
     error_callback: e => { signinBusy(false);
       showSignin(e && e.type === 'popup_failed_to_open' ? 'The Google sign-in window was blocked. Allow pop-ups for this site, then click Sign in again.'
         : 'The Google sign-in window was closed before finishing. Click Sign in to try again.'); } });
+  if (takeRedirectToken()) return;
   let saved = null; try { saved = JSON.parse(sessionStorage.getItem('hraTok') || 'null'); } catch (e) {}
-  if (saved && saved.exp > Date.now()) { token = saved.t; afterSignIn(); } else showSignin();
+  if (saved && saved.exp > Date.now()) { token = saved.t; afterSignIn(); } else showSignin(IN_APP ? IN_APP_MSG : undefined);
+}
+/* Phones: full-page Google sign-in that comes back here (pop-ups don't open reliably on phones).
+   Needs REDIRECT_URI in the OAuth client's "Authorized redirect URIs". */
+const REDIRECT_URI = 'https://ktan-work.github.io/masterock-hr-mobile/web/';
+const IS_PHONE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+const IN_APP = /FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|Telegram|; wv\)|GSA\//i.test(navigator.userAgent);
+const IN_APP_MSG = 'This link opened inside another app, where Google does not allow sign-in. Tap ⋮ or the share button and choose "Open in Chrome" (Android) or "Open in Safari" (iPhone).';
+function redirectSignIn() {
+  const state = crypto.getRandomValues(new Uint32Array(2)).join('-');
+  try { sessionStorage.setItem('hraState', state); } catch (e) {}
+  location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({ client_id: CLIENT_ID, redirect_uri: REDIRECT_URI,
+    response_type: 'token', scope: SCOPES, prompt: 'select_account', include_granted_scopes: 'true', state });
+}
+function takeRedirectToken() {
+  if (!location.hash.includes('access_token=') && !location.hash.includes('error=')) return false;
+  const p = new URLSearchParams(location.hash.slice(1)); history.replaceState(null, '', location.pathname + location.search);
+  let want = null; try { want = sessionStorage.getItem('hraState'); sessionStorage.removeItem('hraState'); } catch (e) {}
+  if (p.get('error') || !p.get('access_token') || p.get('state') !== want) { showSignin(p.get('error') === 'access_denied' ? 'Sign-in was cancelled. Try again.' : 'Sign-in did not finish. Please try again.'); return true; }
+  token = p.get('access_token');
+  try { sessionStorage.setItem('hraTok', JSON.stringify({ t: token, exp: Date.now() + ((+p.get('expires_in') || 3600) - 60) * 1000 })); } catch (e) {}
+  afterSignIn(); return true;
 }
 function screen(id) { ['signin', 'home', 'app'].forEach(s => $('#' + s).hidden = s !== id); }
 function showSignin(msg) { screen('signin'); if (msg) $('#signin-msg').textContent = msg; }
 function signinBusy(on) { const b = $('#signin-btn'); b.disabled = on; b.textContent = on ? 'Opening Google sign-in…' : 'Sign in with Google'; if (on) setTimeout(() => signinBusy(false), 20000); }
 $('#signin-btn').onclick = () => {
+  if (IN_APP) { showSignin(IN_APP_MSG); return; }
+  if (IS_PHONE) { signinBusy(true); redirectSignIn(); return; }
   if (!tokenClient) { showSignin('Still loading Google sign-in… try again in a few seconds.'); return; }
   signinBusy(true);
   tokenClient.requestAccessToken({ prompt: 'select_account' });   // always show the account chooser, so signing in again after "Sign out" works
