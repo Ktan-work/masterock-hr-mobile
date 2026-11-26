@@ -129,6 +129,16 @@ tbody tr.click { cursor: pointer; } tbody tr.click:hover td { background: #e3f6f
   header.band .who { display: none; }
   .tiles { grid-template-columns: 1fr; }
 }
+/* rehire status: 3D traffic light */
+.rehire { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.tlight { display: flex; flex-direction: column; gap: 7px; padding: 9px 8px; border-radius: 16px; background: linear-gradient(145deg, #3a3f47, #15181d);
+  box-shadow: 0 8px 18px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.12), inset 0 -3px 6px rgba(0,0,0,.5); }
+.lamp { width: 30px; height: 30px; border-radius: 50%; position: relative; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.25) 0 8%, var(--d) 45%, #0d0f12 100%);
+  box-shadow: inset 0 -3px 5px rgba(0,0,0,.6), inset 0 2px 2px rgba(255,255,255,.08); }
+.lamp.on { background: radial-gradient(circle at 35% 30%, #fff 0 9%, var(--c) 32%, var(--d) 78%); box-shadow: 0 0 16px 3px var(--c), 0 0 34px 6px var(--g), inset 0 -4px 6px rgba(0,0,0,.35); }
+.lamp.red { --c: #ff4b3e; --d: #7a1009; --g: rgba(255,75,62,.45); } .lamp.yellow { --c: #ffd23d; --d: #7a5a00; --g: rgba(255,210,61,.45); } .lamp.green { --c: #3ee06a; --d: #0b5a22; --g: rgba(62,224,106,.45); }
+.rehire .txt b { display: block; font-size: 17px; } .rehire .txt span { color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: no-preference) { .lamp.on { animation: glow 2.4s ease-in-out infinite; } @keyframes glow { 50% { filter: brightness(1.15); } } }
 /* phones: nothing wider than the screen */
 @media (max-width: 600px) {
   html, body { overflow-x: hidden; }
@@ -382,7 +392,7 @@ const MENUS = {
   hr: [['EMPLOYEE', [['lookup', 'Employee Lookup'], ['team', 'Team Lookup'], ['update', 'Employee Update'], ['dropbox', 'Drop Box']]],
        ['FORMS', [['coe', 'Certificate of Employment'], ['confirm', 'Confirmation Letter'], ['promote', 'Promotion Letter'], ['npa', 'Notice of Personnel Action'],
                   ['appraisal', 'Performance Appraisal'], ['ctbc', 'CTBC Bank Form'], ['erd', 'Relationship Disclosure (ERD)'], ['teambuild', 'Team Building Form'], ['prf', "PRF's, CA & ATD 🔒"]]],
-       ['TRACKERS', [['resign', 'Resignation Tracker']]]],
+       ['TRACKERS', [['resign', 'Resignation Tracker'], ['disc', 'Disciplinary Tracker']]]],
 };
 document.querySelectorAll('[data-sys]').forEach(b => b.onclick = () => openSystem(b.dataset.sys));
 $('#home-btn').onclick = () => { screen('home'); };
@@ -398,6 +408,7 @@ function openSystem(sys) {
 }
 const PAGES = { lookup: pageLookup, team: pageTeam, update: pageUpdate, dropbox: pageDropbox,
   coe: pageWrCoe, confirm: pageWrConfirm, promote: pageWrPromote, npa: pageWrNpa, appraisal: pageWrAppraisal, erd: pageWrErd, teambuild: pageWrTeam, resign: pageResign, ctbc: pageWrCtbc, prf: pageWrPrf };
+PAGES.disc = pageDisc;
 function go(k) {
   pageKey = k; document.querySelectorAll('.nav').forEach(b => b.classList.toggle('on', b.dataset.page === k));
   const item = MENUS[system].flatMap(g => g[1]).find(i => i[0] === k);
@@ -414,7 +425,7 @@ let lastQuery = '';
 function pageLookup() {
   $('#page').innerHTML = `
     <div class="panel"><h2>Employee Lookup</h2><div class="body">
-      <div class="row-flex"><input class="search" id="q" placeholder="Employee ID (SL-1234, M0123) or first and last name" value="${esc(lastQuery)}" autocomplete="off"><button class="btn gold" id="go">Search</button></div>
+      <div class="row-flex"><input class="search" id="q" placeholder="Employee ID (e.g. AP000-046) or first and last name" value="${esc(lastQuery)}" autocomplete="off"><button class="btn gold" id="go">Search</button></div>
       <div id="msg" class="small msg-ok" style="margin-top:6px"></div><div class="hits" id="hits"></div></div></div>
     <div class="grid2">
       <div class="panel"><h2>Matched record</h2><div class="body"><dl class="kv" id="kv"></dl>
@@ -844,6 +855,110 @@ function loadForms() {
   })().catch(e => { formsReady = null; throw e; });
   return formsReady;
 }
+/* ======================= Disciplinary Tracker (tab 'Disciplinary Tracker' in the HR Database) ======================= */
+const DISC = 'Disciplinary Tracker';
+const DISC_HDR = ['CASE ID', 'EMPLOYEE ID', 'EMPLOYEE NAME', 'DATE', 'TIME', 'OFFENSE / VIOLATION', 'SUMMARY', 'ACTION TAKEN', 'RESULT / OUTCOME', 'STATUS', 'RECORDED BY', 'RECORDED ON'];
+const DISC_ACTIONS = ['Verbal Warning', 'Written Warning', 'Notice to Explain (NTE)', 'Final Written Warning', 'Suspension', 'Termination', 'Coaching / Counselling', 'No Action'];
+const DISC_STATUS = ['Open', 'Under Investigation', 'Closed'];
+let discCases = [], discEmp = null;
+async function discLoad() {
+  const v = (await (await api(sheetUrl(SHEET_ID, `'${DISC}'`))).json()).values || [];
+  discCases = v.slice(1).map((r, i) => { const o = { _row: i + 2 }; DISC_HDR.forEach((h, j) => o[h] = r[j] ?? ''); return o; }).filter(o => o['CASE ID'] || o['EMPLOYEE ID']);
+}
+const discDate = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : s; };          // stored dd/mm/yyyy like the rest of the sheet
+const discIso = s => { const m = String(s || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : ''; };
+const discSortKey = c => discIso(c['DATE']) + ' ' + (c['TIME'] || '');
+function pageDisc() {
+  $('#page').innerHTML = `<div class="panel"><h2>Disciplinary Tracker</h2><div class="body"><div id="dpick"></div>
+      <b id="dwho" style="display:block;margin-top:8px;font-size:15px">Search an employee to see their disciplinary cases</b></div></div>
+    <div class="panel"><h2>Cases</h2><div class="body" id="dcases"><div class="spin"></div></div></div>
+    <div class="bar"><span class="info" id="dinfo"></span><button class="btn gold" id="dnew" disabled>+ New case</button></div>`;
+  picker($('#dpick'), r => { discEmp = r; current = r; showDisc(); }, 'Search');
+  $('#dnew').onclick = () => discEdit(null);
+  discLoad().then(() => { if (current) { discEmp = current; showDisc(); } else showDisc(); })
+    .catch(e => { if (e.message !== 'signed out') $('#dcases').innerHTML = `<p class="msg-err">Could not load the tracker: ${esc(e.message)}</p>`; });
+}
+function showDisc() {
+  const box = $('#dcases'); if (!box) return;
+  $('#dinfo').textContent = `${discCases.length} case(s) on record`;
+  if (!discEmp) { box.innerHTML = '<div class="empty">No employee selected.</div>'; return; }
+  $('#dwho').textContent = `${discEmp[ID]}  ${val(discEmp, 'FULL NAME')}`; $('#dnew').disabled = false;
+  const list = discCases.filter(c => norm(c['EMPLOYEE ID']) === norm(discEmp[ID])).sort((a, b) => discSortKey(b).localeCompare(discSortKey(a)));
+  box.innerHTML = rehireHtml(discEmp, list.length) + '<div id="dlist"></div>';
+  wireRehire(discEmp);
+  if (!list.length) { $('#dlist').innerHTML = '<div class="empty">No disciplinary cases recorded for this employee.</div>'; return; }
+  const pill = s => `<span class="pill ${/closed/i.test(s) ? 'ok' : /investig/i.test(s) ? 'warn' : 'no'}">${esc(s || 'Open')}</span>`;
+  $('#dlist').innerHTML = `<p class="small muted" style="margin-top:0">${list.length} case(s) - click a case to see the summary</p><div class="tbl-wrap" style="max-height:none"><table><thead><tr><th>Case</th><th>Date</th><th>Offense / violation</th><th>Action taken</th><th>Status</th></tr></thead><tbody>` +
+    list.map(c => `<tr class="click" data-row="${c._row}"><td>${esc(c['CASE ID'])}</td><td>${esc(c['DATE'])}${c['TIME'] ? ' · ' + esc(c['TIME']) : ''}</td><td style="white-space:normal">${esc(c['OFFENSE / VIOLATION'])}</td><td>${esc(c['ACTION TAKEN'])}</td><td>${pill(c['STATUS'])}</td></tr>`).join('') + '</tbody></table></div>';
+  box.querySelectorAll('tr.click').forEach(tr => tr.onclick = () => discView(discCases.find(c => c._row === +tr.dataset.row)));
+}
+/* rehire status: red = do not rehire (ELIGIBILITY TO REHIRE = NO / BLACKLISTED), yellow = has cases but may be rehired, green = no record */
+const REHIRE = 'ELIGIBILITY TO REHIRE', NO_REHIRE = ['NO', 'BLACKLISTED', 'DO NOT REHIRE', 'NOT ELIGIBLE'];
+function rehireState(r, nCases) {
+  const flag = norm(r[REHIRE]);
+  if (NO_REHIRE.includes(flag)) return ['red', 'Do not rehire', flag === 'BLACKLISTED' ? 'Blacklisted in the HR Database.' : 'Marked not eligible for rehire.'];
+  if (nCases) return ['yellow', 'Rehire allowed - has disciplinary record', `${nCases} case(s) on record. Review them before rehiring.`];
+  return ['green', 'Rehire allowed - clean record', 'No disciplinary record.'];
+}
+function rehireHtml(r, nCases) {
+  const [c, title, note] = rehireState(r, nCases), flag = norm(r[REHIRE]);
+  return `<div class="rehire" style="margin-bottom:14px"><div class="tlight" role="img" aria-label="Rehire status: ${esc(title)}">${['red', 'yellow', 'green'].map(x => `<div class="lamp ${x}${x === c ? ' on' : ''}"></div>`).join('')}</div>
+    <div class="txt" style="flex:1 1 220px"><b>${esc(title)}</b><span>${esc(note)}</span></div>
+    <div class="row-flex" style="flex:0 1 330px"><label class="small muted" for="rh-sel">Rehire</label><select id="rh-sel" style="flex:1 1 150px">
+      ${[['', 'Eligible (not set)'], ['YES', 'Eligible to rehire'], ['NO', 'Do not rehire'], ['BLACKLISTED', 'Blacklisted']].map(([v, l]) => `<option value="${v}" ${v === (NO_REHIRE.includes(flag) && flag !== 'BLACKLISTED' ? 'NO' : flag) ? 'selected' : ''}>${l}</option>`).join('')}
+    </select><button class="btn ghost" id="rh-save" disabled>Save</button></div></div>`;
+}
+function wireRehire(r) {
+  const sel = $('#rh-sel'), btn = $('#rh-save'), orig = sel.value;
+  sel.onchange = () => btn.disabled = sel.value === orig;
+  btn.onclick = async () => {
+    const col = hdr.indexOf(REHIRE) + 1;
+    if (!col) { modal('Rehire status', `The HR Database has no "${REHIRE}" column yet.`, [['OK', 'gold', 1]]); return; }
+    const label = sel.options[sel.selectedIndex].text;
+    if (!(await modal('Change rehire status', `<p>Set <b>${esc(r[ID])} ${esc(val(r, 'FULL NAME'))}</b> to <b>${esc(label)}</b>?</p><p class="small muted">Saved in the HR Database, column ${REHIRE}.</p>`, [['Cancel', 'ghost', 0], ['Save', 'gold', 1]]))) return;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try { await writeTabCells(TAB, [[r._row, col, sel.value]]); r[REHIRE] = sel.value; toast('Rehire status saved'); showDisc(); }
+    catch (e) { btn.disabled = false; btn.textContent = 'Save'; if (e.message !== 'signed out') modal('Not saved', esc(e.message), [['OK', 'gold', 1]]); }
+  };
+}
+async function discView(c) {
+  const line = (k, v) => `<dt>${esc(k)}</dt><dd style="white-space:pre-wrap">${esc(v) || '<span class="muted">—</span>'}</dd>`;
+  const go = await modal(`Case ${c['CASE ID']}`, `<dl class="kv">${line('Employee', `${c['EMPLOYEE ID']}  ${c['EMPLOYEE NAME']}`)}${line('Date', c['DATE'])}${line('Time', c['TIME'])}
+      ${line('Offense / violation', c['OFFENSE / VIOLATION'])}${line('Summary', c['SUMMARY'])}${line('Action taken', c['ACTION TAKEN'])}${line('Result / outcome', c['RESULT / OUTCOME'])}
+      ${line('Status', c['STATUS'])}${line('Recorded by', `${c['RECORDED BY']}${c['RECORDED ON'] ? ' on ' + c['RECORDED ON'] : ''}`)}</dl>`, [['Edit', 'ghost', 'edit'], ['Close', 'gold', 0]]);
+  if (go === 'edit') discEdit(c);
+}
+async function discEdit(c) {
+  const isNew = !c, r = discEmp;
+  const f = (id, label, ctl) => `<div class="field" style="grid-template-columns:1fr"><label for="${id}">${label}</label>${ctl}</div>`;
+  const opts = (list, cur) => list.map(o => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
+  const now = new Date(), today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const p = modal(isNew ? `New case - ${r[ID]} ${val(r, 'FULL NAME')}` : `Edit case ${c['CASE ID']}`, `<div class="fields" style="grid-template-columns:1fr 1fr">
+      ${f('dc-date', 'Date of incident', `<input type="date" id="dc-date" value="${isNew ? today : discIso(c['DATE'])}">`)}${f('dc-time', 'Time', `<input type="time" id="dc-time" value="${isNew ? '' : esc(c['TIME'])}">`)}</div>
+    ${f('dc-off', 'Offense / violation', `<input id="dc-off" value="${isNew ? '' : esc(c['OFFENSE / VIOLATION'])}" placeholder="e.g. Tardiness, AWOL, Misconduct">`)}
+    ${f('dc-sum', 'Summary (what happened)', `<textarea id="dc-sum" rows="4">${isNew ? '' : esc(c['SUMMARY'])}</textarea>`)}
+    <div class="fields" style="grid-template-columns:1fr 1fr">${f('dc-act', 'Action taken', `<select id="dc-act">${opts(DISC_ACTIONS, isNew ? DISC_ACTIONS[0] : c['ACTION TAKEN'])}</select>`)}${f('dc-st', 'Status', `<select id="dc-st">${opts(DISC_STATUS, isNew ? 'Open' : c['STATUS'])}</select>`)}</div>
+    ${f('dc-res', 'Result / outcome', `<textarea id="dc-res" rows="3">${isNew ? '' : esc(c['RESULT / OUTCOME'])}</textarea>`)}<p class="small msg-err" id="dc-err"></p>`, [['Cancel', 'ghost', 0], ['Save case', 'gold', 1]]);
+  // keep the modal open until the form is valid: re-wire the Save button
+  const box = [...document.querySelectorAll('.modal')].pop(), save = [...box.querySelectorAll('.btn.gold')].pop();
+  save.onclick = async () => {
+    const g = id => box.querySelector('#' + id).value.trim();
+    if (!g('dc-date') || !g('dc-off')) { box.querySelector('#dc-err').textContent = 'Date and offense are required.'; return; }
+    save.disabled = true; save.textContent = 'Saving…';
+    try {
+      const stamp = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+      const yr = g('dc-date').slice(0, 4), n = discCases.filter(x => String(x['CASE ID']).startsWith(`DC-${yr}-`)).length + 1;
+      const rec = isNew ? { 'CASE ID': `DC-${yr}-${String(n).padStart(3, '0')}`, 'EMPLOYEE ID': r[ID], 'EMPLOYEE NAME': val(r, 'FULL NAME'), 'RECORDED BY': email, 'RECORDED ON': stamp } : { ...c };
+      Object.assign(rec, { 'DATE': discDate(g('dc-date')), 'TIME': g('dc-time'), 'OFFENSE / VIOLATION': g('dc-off'), 'SUMMARY': g('dc-sum'), 'ACTION TAKEN': g('dc-act'), 'RESULT / OUTCOME': g('dc-res'), 'STATUS': g('dc-st') });
+      const vals = [DISC_HDR.map(h => rec[h] ?? '')];
+      if (isNew) await api(sheetUrl(SHEET_ID, `'${DISC}'!A1:L`) + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: JSON.stringify({ values: vals }) });
+      else await api(sheetUrl(SHEET_ID, `'${DISC}'!A${c._row}:L${c._row}`) + '?valueInputOption=RAW', { method: 'PUT', body: JSON.stringify({ values: vals }) });
+      box.remove(); toast(`Case ${rec['CASE ID']} saved`); await discLoad(); showDisc();
+    } catch (e) { save.disabled = false; save.textContent = 'Save case'; box.querySelector('#dc-err').textContent = e.message === 'signed out' ? '' : 'Not saved: ' + e.message; }
+  };
+  await p;
+}
+
 /* ======================= Phase 3: reports (CPCEC + HR Dashboard), same rules as the desktop app ======================= */
 let reportsReady = null;
 function loadReports() {
@@ -1297,7 +1412,7 @@ async function busyRun(btn, label, fn) {
 }
 /* employee picker used by every form page */
 function picker(el, onPick, button = 'Find') {
-  el.innerHTML = `<div class="row-flex"><input class="search" placeholder="Employee ID (SL-1234, M0123) or name" autocomplete="off"><button class="btn gold">${esc(button)}</button>
+  el.innerHTML = `<div class="row-flex"><input class="search" placeholder="Employee ID (e.g. AP000-046) or name" autocomplete="off"><button class="btn gold">${esc(button)}</button>
     <button class="btn ghost">Use employee from Lookup</button></div><div class="small msg-err"></div><div class="hits"></div>`;
   const [q] = el.querySelectorAll('input'), [find, cur] = el.querySelectorAll('button'), msg = el.querySelector('.msg-err'), hits = el.querySelector('.hits');
   const run = () => { const r = findRows(q.value); hits.innerHTML = ''; msg.textContent = '';
